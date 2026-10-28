@@ -1,0 +1,78 @@
+# ==============================================================================
+# SISTEMA WEB AUTÓNOMO DE VENTA DE BOLETOS EN LÍNEA - VILCABAMBATURIS CÍA. LTDA.
+# INFRAESTRUCTURA DEVOPS PARA SERVIDOR VPS PROPIO ($5.00/MES)
+# SERVICIOS:
+# 1. Base de datos PostgreSQL 16 (con esquema relacional Prisma)
+# 2. WhatsApp Gateway VPS propio (Baileys / Evolution API con webhooks)
+# 3. App Core Next.js / Express con Conciliación Bancaria y PWA
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # 1. Base de Datos Relacional PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: vilcabambaturis_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vilcabambaturis_db}
+      POSTGRES_USER: ${POSTGRES_USER:-cooperativa_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-VilcaSecureTransit2026!}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cooperativa_user -d vilcabambaturis_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Gateway de WhatsApp Propio (VPS $5.00/mes - Baileys / Evolution API)
+  whatsapp-gateway:
+    image: atendai/evolution-api:v2.1.0
+    container_name: vilcabambaturis_whatsapp_vps
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_URL: http://localhost:8080
+      AUTHENTICATION_API_KEY: ${WHATSAPP_API_KEY:-vilca_evolution_secret_token_2026}
+      DATABASE_ENABLED: "false"
+      WEBHOOK_GLOBAL_ENABLED: "true"
+      WEBHOOK_GLOBAL_URL: http://app:3000/api/v1/whatsapp/webhook
+    volumes:
+      - whatsapp_sessions:/evolution/instances
+    depends_on:
+      - postgres
+
+  # 3. Aplicación Web Autónomo de Venta de Boletos
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vilcabambaturis_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://cooperativa_user:VilcaSecureTransit2026!@postgres:5432/vilcabambaturis_db?schema=public
+      WHATSAPP_GATEWAY_URL: http://whatsapp-gateway:8080
+      WHATSAPP_API_KEY: vilca_evolution_secret_token_2026
+      BACKUP_CRON_SCHEDULE: "50 23 * * *"
+      ADMIN_EMAIL_BACKUP: gerencia@vilcabambaturis.com.ec
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      whatsapp-gateway:
+        condition: service_started
+
+volumes:
+  postgres_data:
+    driver: local
+  whatsapp_sessions:
+    driver: local

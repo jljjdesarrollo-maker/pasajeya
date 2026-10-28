@@ -1,0 +1,24 @@
+{
+  "name": "Vilcabambaturis - Validación Ayudante PWA",
+  "short_name": "Vilcabambaturis",
+  "description": "Validación criptográfica offline de boletos QR a bordo de buses interparroquiales.",
+  "start_url": "/?view=ayudante",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/src/assets/images/loja_terminal_platform_1793226370765.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/src/assets/images/vilcabambaturis_bus_hero_1793226370935.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

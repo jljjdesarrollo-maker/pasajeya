@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vilcabambaturis - Sistema Autónomo de Boletos</title>
+    <meta name="description" content="Plataforma SaaS Multi-Tenant de venta autónoma de boletos interparroquiales con auto-conciliación bancaria IA, bloqueo atómico de asientos, pase digital QR offline y gestión de taquilla." />
+    <meta property="og:title" content="Vilcabambaturis - Sistema Autónomo de Boletos" />
+    <meta property="og:description" content="Plataforma SaaS Multi-Tenant de venta autónoma de boletos interparroquiales con auto-conciliación bancaria IA, bloqueo atómico de asientos, pase digital QR offline y gestión de taquilla." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#f59e0b" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-amber-100 selection:text-amber-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('PWA ServiceWorker registrado con éxito:', reg.scope);
+          }).catch((err) => {
+            console.warn('Error registrando ServiceWorker:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Vilcabambaturis - Sistema Autónomo de Boletos",
+  "description": "Plataforma SaaS Multi-Tenant de venta autónoma de boletos interparroquiales con auto-conciliación bancaria IA, bloqueo atómico de asientos, pase digital QR offline y gestión de taquilla.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

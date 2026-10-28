@@ -1,0 +1,203 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RolUsuario {
+  SUPERADMIN
+  GERENCIA
+  SECRETARIA
+  PASAJERO_INVITADO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  CONFIRMADO
+  MONTO_INCOMPLETO
+  PAGO_EXTEMPORANEO
+  EXPIRADO
+  RECHAZADO
+}
+
+enum EstadoBoleto {
+  RESERVADO
+  CONFIRMADO
+  ABORDADO
+  CANCELADO
+}
+
+enum BancoOperador {
+  BANCO_DE_LOJA
+  BANCO_PICHINCHA
+}
+
+model Tenant {
+  id                    String                   @id @default(uuid())
+  slug                  String                   @unique
+  nombreComercial       String
+  ruc                   String                   @unique
+  whatsappSoporte       String
+  activo                Boolean                  @default(true)
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  configBancos          TenantBankConfig[]
+  rutas                 Ruta[]
+  unidades              UnidadBus[]
+  frecuencias           Frecuencia[]
+  turnos                ProgramacionTurno[]
+  transacciones         TransaccionPago[]
+  boletos               Boleto[]
+  facturacionesSaaS     FacturacionMensualTenant[]
+  logsRespaldos         LogRespaldoBD[]
+}
+
+model TenantBankConfig {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  banco                 BancoOperador
+  numeroCuenta          String
+  tipoCuenta            String
+  titular               String
+  ruc                   String
+  imagenQrUrl           String
+  activo                Boolean       @default(true)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, banco])
+}
+
+model Ruta {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  origen                String
+  destino               String
+  activa                Boolean       @default(true)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tramos                TramoTarifa[]
+  frecuencias           Frecuencia[]
+}
+
+model TramoTarifa {
+  id                    String        @id @default(uuid())
+  rutaId                String
+  puntoDestino          String
+  tarifaNormal          Float
+  tarifaMedia           Float
+  esParadaUrbanaLoja    Boolean       @default(false)
+
+  ruta                  Ruta          @relation(fields: [rutaId], references: [id], onDelete: Cascade)
+}
+
+model UnidadBus {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  numeroDisco           String
+  placa                 String
+  capacidadTotal        Int           @default(45)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  turnosTeoricos        ProgramacionTurno[] @relation("BusTeorico")
+  turnosReales          ProgramacionTurno[] @relation("BusReal")
+}
+
+model Frecuencia {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  rutaId                String
+  horaSalidaProgramada  String
+  esFrecuenciaRigida    Boolean       @default(true)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ruta                  Ruta          @relation(fields: [rutaId], references: [id], onDelete: Cascade)
+  turnos                ProgramacionTurno[]
+}
+
+model ProgramacionTurno {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  frecuenciaId          String
+  busDiscoTeoricoId     String
+  busDiscoRealId        String?
+  fecha                 DateTime      @db.Date
+  asientosVendidosWeb   Int[]         @default([])
+  asientosBloqueadosTemp Json?        // Lock atómico de 15 min
+  ventaWebCongelada     Boolean       @default(false)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  frecuencia            Frecuencia    @relation(fields: [frecuenciaId], references: [id], onDelete: Cascade)
+  busTeorico            UnidadBus     @relation("BusTeorico", fields: [busDiscoTeoricoId], references: [id])
+  busReal               UnidadBus?    @relation("BusReal", fields: [busDiscoRealId], references: [id])
+  transacciones         TransaccionPago[]
+  boletos               Boleto[]
+}
+
+model TransaccionPago {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  turnoId               String
+  banco                 BancoOperador
+  referenciaBanco       String
+  montoEsperado         Float
+  montoRecibido         Float?
+  feeServicioCalculado  Float         @default(0.25)
+  estado                EstadoPago    @default(PENDIENTE)
+  compradorCedula       String
+  compradorNombre       String
+  compradorCorreo       String
+  compradorWhatsApp     String
+  createdAt             DateTime      @default(now())
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  turno                 ProgramacionTurno @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  boletos               Boleto[]
+
+  @@unique([tenantId, referenciaBanco])
+}
+
+model Boleto {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  transaccionId         String
+  turnoId               String
+  numeroAsiento         Int
+  origen                String
+  destino               String
+  puntoAbordaje         String
+  codigoUnico           String        @unique
+  firmaDigitalHmac      String
+  estado                EstadoBoleto  @default(RESERVADO)
+  fechaAbordaje         DateTime?
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transaccion           TransaccionPago @relation(fields: [transaccionId], references: [id], onDelete: Cascade)
+  turno                 ProgramacionTurno @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+}
+
+model FacturacionMensualTenant {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  mesAno                String
+  totalBoletosVendidos  Int
+  montoTotalFeeSaaS     Float
+  pagado                Boolean       @default(false)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model LogRespaldoBD {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  fechaRespaldo         DateTime      @default(now())
+  tamanoBytes           Int
+  enviadoCorreo         String
+  exitoso               Boolean       @default(true)
+
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}

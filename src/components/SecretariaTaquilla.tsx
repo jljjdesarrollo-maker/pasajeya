@@ -128,7 +128,7 @@ export const SecretariaTaquilla: React.FC<SecretariaTaquillaProps> = ({ tenant }
             >
               {turnos.map(t => (
                 <option key={t.id} value={t.id}>
-                  {t.frecuenciaHora} — Disco {dbService.getBusDiscoForTurno(t)} ({t.ventaWebCongelada ? 'Congelado' : 'Abierto'})
+                  {t.frecuenciaHora} — Disco {dbService.getBusDiscoForTurno(t)} [{t.destinoFinal || 'Vilcabamba'}] ({t.ventaWebCongelada ? 'Congelado' : 'Abierto'})
                 </option>
               ))}
             </select>

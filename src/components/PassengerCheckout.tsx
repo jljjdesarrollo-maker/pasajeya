@@ -74,9 +74,28 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
     return () => clearInterval(interval);
   }, []);
 
-  const activeTurno = turnos.find(t => t.id === selectedTurnoId) || turnos[0];
   const activeRoute = tenant.rutas[0];
   const selectedTramo = activeRoute?.tramos.find(t => t.id === selectedTramoId) || activeRoute?.tramos[1];
+
+  // Turnos filtrados dinámicamente según el tramo/parada de destino
+  const filteredTurnos = React.useMemo(() => {
+    if (!selectedTramo) return turnos;
+    return dbService.getTurnosPorDestino(selectedTramo.puntoDestino);
+  }, [turnos, selectedTramo]);
+
+  // Si el turno previamente seleccionado no atiende el nuevo destino, auto-seleccionar el primero válido
+  useEffect(() => {
+    if (filteredTurnos.length > 0) {
+      const exists = filteredTurnos.some(t => t.id === selectedTurnoId);
+      if (!exists) {
+        setSelectedTurnoId(filteredTurnos[0].id);
+        setSelectedSeats([]);
+        setLockExpiresAt(null);
+      }
+    }
+  }, [filteredTurnos, selectedTurnoId]);
+
+  const activeTurno = filteredTurnos.find(t => t.id === selectedTurnoId) || filteredTurnos[0] || turnos[0];
 
   // Cálculo de tarifas
   const tarifaPorAsiento = selectedTramo?.tarifaNormal || 2.00;
@@ -228,6 +247,7 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
     // 1. Crear transacción pendiente
     const createTxRes = dbService.createPendingTransaction({
       turnoId: activeTurno.id,
+      destinoBoleto: selectedTramo?.puntoDestino || activeTurno.destino,
       banco: selectedBank,
       referenciaBanco: referenciaBanco.trim().toUpperCase(),
       montoEsperado: totalPagar,
@@ -362,80 +382,121 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
                   Punto de Destino (Tramo de Tarifa Oficial)
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {activeRoute?.tramos.map(tramo => (
-                    <button
-                      key={tramo.id}
-                      type="button"
-                      onClick={() => setSelectedTramoId(tramo.id)}
-                      className={`p-2.5 rounded-xl text-left border transition-all ${
-                        selectedTramoId === tramo.id
-                          ? 'border-amber-500 bg-amber-50/50 text-slate-900 ring-1 ring-amber-500'
-                          : 'border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="text-xs font-bold truncate">{tramo.puntoDestino}</div>
-                      <div className="text-xs text-amber-700 font-semibold font-mono mt-0.5">
-                        ${tramo.tarifaNormal.toFixed(2)} USD
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2. Selector de Turno / Horario */}
-              <div className="pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Turnos del Día ({turnos.length} programados)</span>
-                  </label>
-                  <span className="text-xs text-slate-500">Cierre web a T-20 min</span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {turnos.map(turno => {
-                    const busDisco = dbService.getBusDiscoForTurno(turno);
-                    const isFrozen = turno.ventaWebCongelada;
-                    const isSelected = selectedTurnoId === turno.id;
-
+                  {activeRoute?.tramos.map(tramo => {
+                    const isSelected = selectedTramoId === tramo.id;
+                    const isAll = tramo.puntoDestino.toLowerCase().includes('malacatos') || tramo.puntoDestino.toLowerCase().includes('vilcabamba');
                     return (
                       <button
-                        key={turno.id}
+                        key={tramo.id}
                         type="button"
-                        onClick={() => {
-                          setSelectedTurnoId(turno.id);
-                          setSelectedSeats([]);
-                          setLockExpiresAt(null);
-                        }}
-                        className={`p-2.5 rounded-xl text-left border relative transition-all ${
+                        onClick={() => setSelectedTramoId(tramo.id)}
+                        className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-amber-500 bg-amber-50/60 ring-1 ring-amber-500'
-                            : isFrozen
-                            ? 'border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
+                            ? 'border-amber-500 bg-amber-50/60 text-slate-900 ring-2 ring-amber-500/40 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 bg-slate-50/70 text-slate-700'
                         }`}
                       >
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-sm font-bold text-slate-900 font-mono tabular-nums">
-                            {turno.frecuenciaHora}
+                        <div className="text-xs font-bold truncate">{tramo.puntoDestino}</div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-amber-700 font-bold font-mono">
+                            ${tramo.tarifaNormal.toFixed(2)} USD
                           </span>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            D-{busDisco}
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {isAll ? '100% de buses' : 'Turnos específicos'}
                           </span>
-                        </div>
-                        <div className="mt-1 text-[11px] truncate">
-                          {isFrozen ? (
-                            <span className="text-rose-600 font-medium">Venta Cerrada</span>
-                          ) : (
-                            <span className="text-emerald-700 font-medium">
-                              {10 - turno.asientosVendidosWeb.length} Disp. Web
-                            </span>
-                          )}
                         </div>
                       </button>
                     );
                   })}
                 </div>
+              </div>
+
+              {/* 2. Selector de Turno / Horario filtrado dinámicamente */}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Turnos que atienden {selectedTramo?.puntoDestino} ({filteredTurnos.length} disponibles)</span>
+                  </label>
+                  <span className="text-xs text-slate-500 font-mono">Cierre web a T-20 min</span>
+                </div>
+
+                {filteredTurnos.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 text-center">
+                    No hay turnos con servicio hacia este destino hoy. Por favor seleccione otro tramo o consulte en ventanilla.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {filteredTurnos.map(turno => {
+                      const busDisco = dbService.getBusDiscoForTurno(turno);
+                      const isFrozen = turno.ventaWebCongelada;
+                      const isSelected = selectedTurnoId === turno.id;
+
+                      const isElvira = turno.destinoFinal?.toLowerCase().includes('elvira') || turno.destino.toLowerCase().includes('elvira');
+                      const isTambo = turno.destinoFinal?.toLowerCase().includes('tambo') || turno.destino.toLowerCase().includes('tambo');
+                      const isYangana = turno.destinoFinal?.toLowerCase().includes('yangana') || turno.destino.toLowerCase().includes('yangana');
+
+                      return (
+                        <button
+                          key={turno.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTurnoId(turno.id);
+                            setSelectedSeats([]);
+                            setLockExpiresAt(null);
+                          }}
+                          className={`p-2.5 rounded-xl text-left border relative transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/50 shadow-xs'
+                              : isFrozen
+                              ? 'border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                          }`}
+                        >
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-sm font-bold text-slate-900 font-mono tabular-nums">
+                              {turno.frecuenciaHora}
+                            </span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">
+                              D-{busDisco}
+                            </span>
+                          </div>
+
+                          {/* Badge de alcance del bus */}
+                          <div className="mt-1">
+                            {isElvira ? (
+                              <span className="inline-block text-[10px] font-semibold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded">
+                                Extensión La Elvira
+                              </span>
+                            ) : isYangana ? (
+                              <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                Extensión Yangana
+                              </span>
+                            ) : isTambo ? (
+                              <span className="inline-block text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                                Extensión El Tambo
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                Termina Vilcabamba
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-1 text-[11px] truncate">
+                            {isFrozen ? (
+                              <span className="text-rose-600 font-semibold">Venta Cerrada</span>
+                            ) : (
+                              <span className="text-emerald-700 font-medium">
+                                {10 - turno.asientosVendidosWeb.length} Disp. Web
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 

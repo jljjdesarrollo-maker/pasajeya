@@ -79,6 +79,8 @@ export interface ProgramacionTurno {
   frecuenciaHora: string;
   origen: string;
   destino: string;
+  destinoFinal: string; // 'Vilcabamba' | 'El Tambo' | 'Yangana' | 'La Elvira'
+  paradasAtendidas: string[]; // Lista de paradas intermedias y finales atendidas
   busDiscoTeoricoId: string;
   busDiscoRealId: string | null;
   fecha: string; // ISO Date YYYY-MM-DD
@@ -108,6 +110,7 @@ export interface TransaccionPago {
   id: string;
   tenantId: string;
   turnoId: string;
+  destinoBoleto?: string; // Destino específico seleccionado por el pasajero
   banco: BancoOperador;
   referenciaBanco: string;
   montoEsperado: number;

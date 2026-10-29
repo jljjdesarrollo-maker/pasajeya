@@ -113,10 +113,12 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
   {
     id: 'turno-1',
     tenantId: 'tenant-vilcabambaturis',
-    frecuenciaId: 'frec-1430',
-    frecuenciaHora: '14:30',
+    frecuenciaId: 'frec-0600',
+    frecuenciaHora: '06:00',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
     destino: 'Vilcabamba (Valle de la Longevidad)',
+    destinoFinal: 'Vilcabamba',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba'],
     busDiscoTeoricoId: 'bus-04',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -127,10 +129,12 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
   {
     id: 'turno-2',
     tenantId: 'tenant-vilcabambaturis',
-    frecuenciaId: 'frec-1600',
-    frecuenciaHora: '16:00',
+    frecuenciaId: 'frec-0715',
+    frecuenciaHora: '07:15',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Vilcabamba (Valle de la Longevidad)',
+    destino: 'Loja - Vilcabamba - La Elvira',
+    destinoFinal: 'La Elvira',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo', 'Yangana', 'Zahuayco', 'La Elvira'],
     busDiscoTeoricoId: 'bus-12',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -141,10 +145,12 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
   {
     id: 'turno-3',
     tenantId: 'tenant-vilcabambaturis',
-    frecuenciaId: 'frec-1730',
-    frecuenciaHora: '17:30',
+    frecuenciaId: 'frec-0830',
+    frecuenciaHora: '08:30',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Vilcabamba (Valle de la Longevidad)',
+    destino: 'Loja - Vilcabamba - El Tambo',
+    destinoFinal: 'El Tambo',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo'],
     busDiscoTeoricoId: 'bus-18',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -155,11 +161,109 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
   {
     id: 'turno-4',
     tenantId: 'tenant-vilcabambaturis',
+    frecuenciaId: 'frec-1000',
+    frecuenciaHora: '10:00',
+    origen: 'Loja (Terminal Terrestre Reina del Cisne)',
+    destino: 'Vilcabamba (Valle de la Longevidad)',
+    destinoFinal: 'Vilcabamba',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba'],
+    busDiscoTeoricoId: 'bus-25',
+    busDiscoRealId: null,
+    fecha: TODAY_STR,
+    asientosVendidosWeb: [],
+    asientosBloqueadosTemp: {},
+    ventaWebCongelada: false
+  },
+  {
+    id: 'turno-5',
+    tenantId: 'tenant-vilcabambaturis',
+    frecuenciaId: 'frec-1130',
+    frecuenciaHora: '11:30',
+    origen: 'Loja (Terminal Terrestre Reina del Cisne)',
+    destino: 'Loja - Vilcabamba - Yangana',
+    destinoFinal: 'Yangana',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo', 'Yangana'],
+    busDiscoTeoricoId: 'bus-04',
+    busDiscoRealId: null,
+    fecha: TODAY_STR,
+    asientosVendidosWeb: [],
+    asientosBloqueadosTemp: {},
+    ventaWebCongelada: false
+  },
+  {
+    id: 'turno-6',
+    tenantId: 'tenant-vilcabambaturis',
+    frecuenciaId: 'frec-1300',
+    frecuenciaHora: '13:00',
+    origen: 'Loja (Terminal Terrestre Reina del Cisne)',
+    destino: 'Vilcabamba (Valle de la Longevidad)',
+    destinoFinal: 'Vilcabamba',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba'],
+    busDiscoTeoricoId: 'bus-12',
+    busDiscoRealId: null,
+    fecha: TODAY_STR,
+    asientosVendidosWeb: [],
+    asientosBloqueadosTemp: {},
+    ventaWebCongelada: false
+  },
+  {
+    id: 'turno-7',
+    tenantId: 'tenant-vilcabambaturis',
+    frecuenciaId: 'frec-1430',
+    frecuenciaHora: '14:30',
+    origen: 'Loja (Terminal Terrestre Reina del Cisne)',
+    destino: 'Loja - Vilcabamba - La Elvira',
+    destinoFinal: 'La Elvira',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo', 'Yangana', 'Zahuayco', 'La Elvira'],
+    busDiscoTeoricoId: 'bus-18',
+    busDiscoRealId: null,
+    fecha: TODAY_STR,
+    asientosVendidosWeb: [1, 2],
+    asientosBloqueadosTemp: {},
+    ventaWebCongelada: false
+  },
+  {
+    id: 'turno-8',
+    tenantId: 'tenant-vilcabambaturis',
+    frecuenciaId: 'frec-1600',
+    frecuenciaHora: '16:00',
+    origen: 'Loja (Terminal Terrestre Reina del Cisne)',
+    destino: 'Vilcabamba (Valle de la Longevidad)',
+    destinoFinal: 'Vilcabamba',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba'],
+    busDiscoTeoricoId: 'bus-25',
+    busDiscoRealId: null,
+    fecha: TODAY_STR,
+    asientosVendidosWeb: [5],
+    asientosBloqueadosTemp: {},
+    ventaWebCongelada: false
+  },
+  {
+    id: 'turno-9',
+    tenantId: 'tenant-vilcabambaturis',
+    frecuenciaId: 'frec-1730',
+    frecuenciaHora: '17:30',
+    origen: 'Loja (Terminal Terrestre Reina del Cisne)',
+    destino: 'Loja - Vilcabamba - El Tambo',
+    destinoFinal: 'El Tambo',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo'],
+    busDiscoTeoricoId: 'bus-04',
+    busDiscoRealId: null,
+    fecha: TODAY_STR,
+    asientosVendidosWeb: [],
+    asientosBloqueadosTemp: {},
+    ventaWebCongelada: false
+  },
+  {
+    id: 'turno-10',
+    tenantId: 'tenant-vilcabambaturis',
     frecuenciaId: 'frec-1900',
     frecuenciaHora: '19:00',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
     destino: 'Vilcabamba (Valle de la Longevidad)',
-    busDiscoTeoricoId: 'bus-25',
+    destinoFinal: 'Vilcabamba',
+    paradasAtendidas: ['Malacatos', 'Vilcabamba'],
+    busDiscoTeoricoId: 'bus-12',
     busDiscoRealId: null,
     fecha: TODAY_STR,
     asientosVendidosWeb: [],
@@ -331,7 +435,16 @@ class TransitDatabaseService {
       const savedWa = localStorage.getItem('vt_wa');
 
       if (savedTenant) this.tenant = JSON.parse(savedTenant);
-      if (savedTurnos) this.turnos = JSON.parse(savedTurnos);
+      if (savedTurnos) {
+        const parsed = JSON.parse(savedTurnos);
+        // Migración automática: verificar que los turnos tengan destinoFinal y paradasAtendidas
+        if (Array.isArray(parsed) && parsed.length > 0 && (!parsed[0].destinoFinal || !parsed[0].paradasAtendidas)) {
+          this.turnos = INITIAL_TURNOS;
+          localStorage.setItem('vt_turnos', JSON.stringify(INITIAL_TURNOS));
+        } else {
+          this.turnos = parsed;
+        }
+      }
       if (savedTx) this.transacciones = JSON.parse(savedTx);
       if (savedBoletos) this.boletos = JSON.parse(savedBoletos);
       if (savedBackups) this.backups = JSON.parse(savedBackups);
@@ -366,6 +479,54 @@ class TransitDatabaseService {
     this.cleanExpiredLocks();
     this.checkDepartureFreezes();
     return [...this.turnos];
+  }
+
+  /**
+   * Filtra turnos disponibles que efectivamente atienden el destino seleccionado.
+   * Reglas de la cooperativa de transporte Loja - Valle de Vilcabamba y Sur:
+   * 1. Malacatos: El 100% de los buses pasan obligatoriamente por Malacatos.
+   * 2. Vilcabamba: Todos los turnos terminados en Vilcabamba o con extensión sur (Tambo, Yangana, Elvira) pasan por Vilcabamba.
+   * 3. El Tambo: Solo turnos que continúan a El Tambo o más allá (Yangana / La Elvira).
+   * 4. Yangana: Solo turnos que continúan a Yangana o La Elvira.
+   * 5. La Elvira / Zahuayco: Exclusivamente turnos extendidos que llegan hasta La Elvira.
+   */
+  public getTurnosPorDestino(puntoDestinoNombreOId: string): ProgramacionTurno[] {
+    const list = this.getTurnos();
+    const dest = puntoDestinoNombreOId.toLowerCase();
+
+    return list.filter(turno => {
+      // 1. Malacatos: Pasan todos los vehículos del corredor
+      if (dest.includes('malacatos') || dest === 't-1') {
+        return true;
+      }
+
+      // 2. Vilcabamba: Todos los turnos del corredor Loja-Sur pasan por Vilcabamba (tanto los que terminan allí como los de extensión)
+      if (dest.includes('vilcabamba') || dest === 't-2') {
+        return true;
+      }
+
+      // 3. El Tambo: Solo turnos cuyo recorrido incluye El Tambo (o continúan a Yangana / Elvira)
+      if (dest.includes('tambo') || dest === 't-3') {
+        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('tambo')) || false;
+      }
+
+      // 4. Yangana: Solo turnos que van a Yangana o La Elvira
+      if (dest.includes('yangana') || dest === 't-4') {
+        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('yangana')) || false;
+      }
+
+      // 5. Zahuayco
+      if (dest.includes('zahuayco') || dest === 't-5') {
+        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('zahuayco') || p.toLowerCase().includes('elvira')) || false;
+      }
+
+      // 6. La Elvira: Solo turnos que van hasta La Elvira
+      if (dest.includes('elvira') || dest === 't-6') {
+        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('elvira')) || false;
+      }
+
+      return true;
+    });
   }
 
   public getTurnoById(id: string): ProgramacionTurno | undefined {
@@ -508,6 +669,7 @@ class TransitDatabaseService {
    */
   public createPendingTransaction(data: {
     turnoId: string;
+    destinoBoleto?: string;
     banco: 'BANCO_DE_LOJA' | 'BANCO_PICHINCHA';
     referenciaBanco: string;
     montoEsperado: number;
@@ -531,6 +693,7 @@ class TransitDatabaseService {
       id: `tx-${Date.now().toString().slice(-6)}`,
       tenantId: this.tenant.id,
       turnoId: data.turnoId,
+      destinoBoleto: data.destinoBoleto,
       banco: data.banco,
       referenciaBanco: data.referenciaBanco.trim().toUpperCase(),
       montoEsperado: Number(data.montoEsperado.toFixed(2)),
@@ -629,7 +792,7 @@ class TransitDatabaseService {
         turnoId: turno.id,
         numeroAsiento: asiento,
         origen: turno.origen,
-        destino: turno.destino,
+        destino: tx.destinoBoleto || turno.destino,
         puntoAbordaje: tx.puntoAbordaje,
         codigoUnico,
         firmaDigitalHmac: firmaHmac,

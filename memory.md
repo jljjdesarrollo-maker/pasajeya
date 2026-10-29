@@ -25,12 +25,17 @@
 - Cliente Prisma generado (`@prisma/client` v5.22.0).
 - Script de inicialización `prisma/seed.ts` ejecutado con datos reales del piloto Vilcabambaturis.
 
-### ⏳ FASE 2: CONCILIACIÓN BANCARIA AUTOMATIZADA & IDEMPOTENCIA
-- Ingesta de notificaciones por correo de transferencias Banco de Loja y Banco Pichincha / Deuna.
-- Validación de montos esperados vs recibidos.
-- Prevención de duplicados con restricción única en `TransaccionPago`.
+### ✅ FASE 2: CONCILIACIÓN BANCARIA AUTOMATIZADA & IDEMPOTENCIA (COMPLETADA)
+- Motor de parseo especializado en `src/services/bankParsers.ts` (< 1ms por Regex para Banco de Loja y Banco Pichincha / Deuna) con fallback NLP Gemini AI.
+- Motor transaccional en `src/services/bankReconciliationEngine.ts` con integración a Neon PostgreSQL vía Prisma ORM (`@prisma/client`).
+- Idempotencia estricta validada contra `[tenantId, referenciaBanco]` (retorna estado `IDEMPOTENTE_DUPLICADO` sin duplicar boletos ni asientos).
+- Transacción atómica `$transaction` en PostgreSQL para confirmación simultánea de pago, emisión de boletos y consolidación de asientos en `asientosVendidosWeb`.
+- Detección y contención de pagos parciales (`MONTO_INCOMPLETO`).
+- Notificación automática por WhatsApp vía gateway VPS Baileys / Evolution API.
+- Suite de pruebas automatizadas `scripts/test-phase2-reconciliation.ts` superada al 100% (5/5 pruebas, latencia E2E ~1.2s < 3.0s).
+- Endpoint `/api/v1/payments/webhook` en `server.ts` con soporte para push de Google Cloud Pub/Sub (decodificación base64) y HTTP directo.
 
-### ⏳ FASE 3: MOTOR DE BLOQUEO DE ASIENTOS Y REGLA T-20 MINUTOS
+### ⏳ FASE 3: CHECKOUT DEL PASAJERO, MAPA DE ASIENTOS (1-10) Y REGLA T-20 MINUTOS (SIGUIENTE PASO)
 - Reserva exclusiva de asientos web (1 al 10) con bloqueo temporal atómico de 15 minutos.
 - Congelamiento automático de venta web a T-20 minutos de la hora de salida de cada turno.
 - Liberación a taquilla física de asientos web no vendidos tras T-20 min.

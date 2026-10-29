@@ -20,6 +20,8 @@ interface WebhookAuditLog {
   reference: string;
   amount: number;
   method: 'REGEX_FAST' | 'GEMINI_AI_NLP';
+  status: string;
+  idempotent: boolean;
   latencyMs: number;
   timestamp: string;
 }
@@ -27,11 +29,15 @@ interface WebhookAuditLog {
 const webhookAuditLogs: WebhookAuditLog[] = [];
 let whatsappVpsConnected = true;
 
+import { processBankReconciliation } from './src/services/bankReconciliationEngine.ts';
+import { prisma } from './src/services/prisma.ts';
+
 // 1. API v1: Webhook de Conciliación Bancaria (Gmail API + Google Cloud Pub/Sub)
 app.post('/api/v1/payments/webhook', async (req: Request, res: Response) => {
   const startTime = performance.now();
   try {
     let rawText = '';
+    let rawSubject = req.body?.rawEmailSubject || req.body?.subject || '';
     let senderAddress = req.body?.senderAddress || '';
     let isPubSub = false;
 
@@ -40,10 +46,10 @@ app.post('/api/v1/payments/webhook', async (req: Request, res: Response) => {
       isPubSub = true;
       try {
         const decoded = Buffer.from(req.body.message.data, 'base64').toString('utf-8');
-        // Si el contenido decodificado es JSON
         try {
           const parsed = JSON.parse(decoded);
           rawText = parsed.rawEmailBody || parsed.text || decoded;
+          rawSubject = parsed.rawEmailSubject || parsed.subject || rawSubject;
           senderAddress = parsed.senderAddress || senderAddress;
         } catch {
           rawText = decoded;
@@ -59,85 +65,152 @@ app.post('/api/v1/payments/webhook', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'rawEmailBody o Pub/Sub message.data es requerido' });
     }
 
-    // Reglas de extracción rápida por Regex (<20ms)
-    const isBancoLoja = /banco\s+de\s+loja|bancodeloja/i.test(rawText) || senderAddress.includes('bancodeloja');
-    const montoMatch = rawText.match(/(?:(?:valor|monto|por|usd|\$)\s*:?\s*\$?\s*(\d+[.,]\d{2}))/i) ||
-                       rawText.match(/\$\s*(\d+[.,]\d{2})/);
-    const refMatch = rawText.match(/(?:referencia|comprobante|documento|transacci[oó]n|ref\.?)\s*:?\s*([A-Za-z0-9_-]{4,15})/i) ||
-                     rawText.match(/(PICH-[A-Za-z0-9]+)/i) ||
-                     rawText.match(/\b(\d{6,8})\b/);
+    // Obtener tenantId de la cooperativa (por defecto Vilcabambaturis)
+    const tenantSlug = req.body?.tenantSlug || 'vilcabambaturis';
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: tenantSlug },
+    });
 
-    let extractedData = null;
+    const tenantId = tenant ? tenant.id : 'tenant-vilcabambaturis';
 
-    if (montoMatch && refMatch) {
-      extractedData = {
-        banco: isBancoLoja ? 'BANCO_DE_LOJA' : 'BANCO_PICHINCHA',
-        referencia: refMatch[1].trim().toUpperCase(),
-        monto: parseFloat(montoMatch[1].replace(',', '.')),
-        method: 'REGEX_FAST'
-      };
-    } else if (process.env.GEMINI_API_KEY) {
-      // Fallback NLP con Gemini AI (gemini-3.8-flash)
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const aiRes = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: `Eres el motor extractor bancario de Vilcabambaturis. Extrae en JSON:
-- banco: "BANCO_DE_LOJA" o "BANCO_PICHINCHA"
-- referencia: string con el comprobante o referencia
-- monto: número decimal con el valor en dólares
-Texto: "${rawText}"`,
-          config: {
-            responseMimeType: 'application/json'
-          }
-        });
+    // Ejecutar Motor de Conciliación e Idempotencia
+    const result = await processBankReconciliation(tenantId, {
+      rawSubject,
+      rawBody: rawText,
+      senderAddress,
+    });
 
-        const parsed = JSON.parse(aiRes.text || '{}');
-        if (parsed.banco && parsed.referencia && parsed.monto) {
-          extractedData = {
-            banco: parsed.banco,
-            referencia: String(parsed.referencia).toUpperCase(),
-            monto: Number(parsed.monto),
-            method: 'GEMINI_AI_NLP'
-          };
-        }
-      } catch (e) {
-        console.error('Error fallback Gemini:', e);
-      }
-    }
+    const totalLatencyMs = Math.round(performance.now() - startTime);
 
-    const latencyMs = Math.round(performance.now() - startTime);
-
-    if (extractedData) {
+    // Registrar en auditoría
+    if (result.extractedData) {
       const logEntry: WebhookAuditLog = {
-        id: `audit-${Date.now()}`,
+        id: `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         source: isPubSub ? 'PUB_SUB_PUSH' : 'DIRECT_HTTP',
-        bank: extractedData.banco as any,
-        reference: extractedData.referencia,
-        amount: extractedData.monto,
-        method: extractedData.method as any,
-        latencyMs,
-        timestamp: new Date().toISOString()
+        bank: result.extractedData.banco,
+        reference: result.extractedData.referencia,
+        amount: result.extractedData.monto,
+        method: result.extractedData.methodUsed,
+        status: result.status,
+        idempotent: result.status === 'IDEMPOTENTE_DUPLICADO',
+        latencyMs: totalLatencyMs,
+        timestamp: new Date().toISOString(),
       };
       webhookAuditLogs.unshift(logEntry);
       if (webhookAuditLogs.length > 50) webhookAuditLogs.pop();
     }
 
-    return res.json({
-      success: !!extractedData,
-      extractedData,
-      latencyMs,
+    return res.status(result.status === 'MONTO_INCOMPLETO' ? 422 : 200).json({
+      ...result,
       source: isPubSub ? 'Google Cloud Pub/Sub' : 'Direct HTTP Webhook',
-      processedAt: new Date().toISOString()
+      processedAt: new Date().toISOString(),
     });
   } catch (err: any) {
+    console.error('Error en webhook de conciliación:', err);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+// 1.1 API v1: Crear Orden / Transacción Pendiente para Reserva Web (Asientos 1-10)
+app.post('/api/v1/payments/create-pending', async (req: Request, res: Response) => {
+  try {
+    const {
+      tenantSlug = 'vilcabambaturis',
+      banco = 'BANCO_DE_LOJA',
+      referenciaBanco,
+      asientos = [1],
+      origen = 'Loja (Terminal)',
+      destino = 'Vilcabamba',
+      precioUnitario = 2.00,
+      compradorNombre = 'CARLOS ALBERTO MORA OCHOA',
+      compradorCedula = '1104859201',
+      compradorCorreo = 'carlos.mora@example.com',
+      compradorWhatsApp = '+593991234567',
+    } = req.body;
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: tenantSlug },
+    });
+    if (!tenant) return res.status(404).json({ error: 'Tenant no encontrado' });
+
+    // Turno de hoy
+    const turno = await prisma.programacionTurno.findFirst({
+      where: { tenantId: tenant.id },
+      include: { frecuencia: true },
+    });
+    if (!turno) return res.status(404).json({ error: 'No hay turno activo para programar' });
+
+    const totalBoletos = asientos.length;
+    const montoEsperado = totalBoletos * precioUnitario + 0.25 * totalBoletos; // Fee transaccional $0.25/boleto
+    const ref = (referenciaBanco || `REF-${Math.floor(100000 + Math.random() * 900000)}`).toUpperCase();
+
+    // Crear TransaccionPago con boletos en estado RESERVADO
+    const tx = await prisma.transaccionPago.create({
+      data: {
+        tenantId: tenant.id,
+        turnoId: turno.id,
+        banco,
+        referenciaBanco: ref,
+        montoEsperado,
+        feeServicioCalculado: 0.25 * totalBoletos,
+        estado: 'PENDIENTE',
+        compradorCedula,
+        compradorNombre,
+        compradorCorreo,
+        compradorWhatsApp,
+        boletos: {
+          create: asientos.map((num: number) => ({
+            tenantId: tenant.id,
+            turnoId: turno.id,
+            numeroAsiento: num,
+            origen,
+            destino,
+            puntoAbordaje: origen,
+            codigoUnico: `VILCA-${num}-${Date.now().toString().slice(-4)}`,
+            firmaDigitalHmac: `HMAC-SHA256-${Date.now()}-${num}`,
+            estado: 'RESERVADO',
+          })),
+        },
+      },
+      include: { boletos: true },
+    });
+
+    res.json({
+      success: true,
+      transaccion: tx,
+      montoEsperado,
+      referenciaBanco: ref,
+      mensaje: `Reserva creada para asientos [${asientos.join(', ')}]. En espera de transferencia por $${montoEsperado.toFixed(2)}.`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 // 2. API v1: Historial de Auditoría de Webhooks
 app.get('/api/v1/payments/audit', (_req: Request, res: Response) => {
   res.json({ logs: webhookAuditLogs });
+});
+
+// 2.1 API v1: Consultar todas las transacciones de pago en Prisma
+app.get('/api/v1/payments/transactions', async (_req: Request, res: Response) => {
+  try {
+    const txs = await prisma.transaccionPago.findMany({
+      include: {
+        boletos: true,
+        turno: {
+          include: {
+            frecuencia: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    res.json({ success: true, count: txs.length, transactions: txs });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 3. API v1: Gateway de WhatsApp VPS Propio ($5/mes - Baileys / Evolution API)

@@ -123,6 +123,7 @@ export interface TransaccionPago {
   compradorWhatsApp: string;
   puntoAbordaje: string;
   asientos: number[];
+  boletos?: Boleto[];
   createdAt: string;
   reconciledAt?: string;
   reconciliationMethod?: 'REGEX_FAST' | 'GEMINI_AI_NLP' | 'MANUAL';

@@ -63,10 +63,94 @@ export const ReconciliationConsole: React.FC<ReconciliationConsoleProps> = ({ te
     setIsProcessing(true);
     setResult(null);
 
+    const payload = {
+      rawEmailSubject: emailSubject,
+      rawEmailBody: emailBody,
+      senderAddress,
+      tenantSlug: tenant.slug || 'vilcabambaturis',
+    };
+
+    try {
+      const resp = await fetch('/api/v1/payments/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (resp.ok || resp.status === 422) {
+        const data = await resp.json();
+        setResult({
+          success: data.success,
+          matchedTransaction: data.transaccionId
+            ? {
+                id: data.transaccionId,
+                tenantId: tenant.id,
+                turnoId: 'turno-1',
+                banco: data.extractedData?.banco || 'BANCO_DE_LOJA',
+                referenciaBanco: data.referenciaBanco || data.extractedData?.referencia || '',
+                montoEsperado: data.montoEsperado || data.extractedData?.monto || 0,
+                montoRecibido: data.montoRecibido || data.extractedData?.monto,
+                feeServicioCalculado: 0.25,
+                estado: data.status === 'CONFIRMADO' || data.status === 'IDEMPOTENTE_DUPLICADO' ? 'CONFIRMADO' : data.status,
+                compradorCedula: '1104859201',
+                compradorNombre: data.extractedData?.ordenanteNombre || 'CARLOS ALBERTO MORA OCHOA',
+                compradorCorreo: 'carlos.mora@example.com',
+                compradorWhatsApp: '+593991234567',
+                puntoAbordaje: 'Terminal Loja',
+                asientos: (data.boletosConfirmados || []).map((b: any) => b.numeroAsiento),
+                boletos: (data.boletosConfirmados || []).map((b: any) => ({
+                  id: b.id,
+                  transaccionId: data.transaccionId,
+                  turnoId: 'turno-1',
+                  numeroAsiento: b.numeroAsiento,
+                  origen: b.origen,
+                  destino: b.destino,
+                  puntoAbordaje: b.origen,
+                  codigoUnico: b.codigoUnico,
+                  firmaDigitalHmac: 'HMAC-VERIFIED',
+                  estado: 'CONFIRMADO',
+                })),
+                createdAt: new Date().toISOString(),
+              }
+            : undefined,
+          boletosEmitidos: (data.boletosConfirmados || []).map((b: any) => ({
+            id: b.id,
+            transaccionId: data.transaccionId || 'tx-1',
+            turnoId: 'turno-1',
+            numeroAsiento: b.numeroAsiento,
+            origen: b.origen,
+            destino: b.destino,
+            puntoAbordaje: b.origen,
+            codigoUnico: b.codigoUnico,
+            firmaDigitalHmac: 'HMAC-VERIFIED',
+            estado: 'CONFIRMADO',
+          })),
+          extractedData: data.extractedData
+            ? {
+                banco: data.extractedData.banco,
+                referencia: data.extractedData.referencia,
+                monto: data.extractedData.monto,
+                ordenanteNombre: data.extractedData.ordenanteNombre,
+                methodUsed: data.extractedData.methodUsed,
+                latencyMs: data.extractedData.parseLatencyMs || data.latencyMs,
+              }
+            : undefined,
+          latencySeconds: Number((data.latencyMs / 1000).toFixed(2)),
+          status: data.status,
+          message: data.message,
+        });
+        setIsProcessing(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('API /api/v1/payments/webhook falló, ejecutando motor local:', e);
+    }
+
+    // Fallback local en memoria
     const res = await processIncomingBankNotification({
       rawEmailSubject: emailSubject,
       rawEmailBody: emailBody,
-      senderAddress
+      senderAddress,
     });
 
     setResult(res);
@@ -232,19 +316,27 @@ export const ReconciliationConsole: React.FC<ReconciliationConsoleProps> = ({ te
               <div className="space-y-4">
                 {/* Banner de Estado */}
                 <div className={`p-4 rounded-xl border ${
-                  result.success
+                  result.status === 'IDEMPOTENTE_DUPLICADO'
+                    ? 'bg-blue-50 border-blue-300 text-blue-950'
+                    : result.success
                     ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                     : result.status === 'MONTO_INCOMPLETO'
                     ? 'bg-amber-50 border-amber-300 text-amber-950'
                     : 'bg-rose-50 border-rose-300 text-rose-950'
                 }`}>
                   <div className="flex items-center gap-2 font-bold text-sm">
-                    {result.success ? (
+                    {result.status === 'IDEMPOTENTE_DUPLICADO' ? (
+                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                    ) : result.success ? (
                       <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                     ) : (
                       <AlertTriangle className="w-5 h-5 text-amber-600" />
                     )}
-                    <span>{result.status}</span>
+                    <span>
+                      {result.status === 'IDEMPOTENTE_DUPLICADO'
+                        ? '🛡️ IDEMPOTENCIA DETECTADA (0 DUPLICADOS)'
+                        : result.status}
+                    </span>
                   </div>
                   <p className="text-xs mt-1 opacity-90">{result.message}</p>
                 </div>

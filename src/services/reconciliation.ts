@@ -35,7 +35,14 @@ export interface ReconciliationResult {
   boletosEmitidos?: Boleto[];
   extractedData?: ExtractedBankData;
   latencySeconds: number;
-  status: 'CONFIRMADO' | 'MONTO_INCOMPLETO' | 'PAGO_EXTEMPORANEO' | 'SIN_COINCIDENCIA' | 'ERROR_PARSING';
+  status:
+    | 'CONFIRMADO'
+    | 'IDEMPOTENTE_DUPLICADO'
+    | 'MONTO_INCOMPLETO'
+    | 'PAGO_EXTEMPORANEO'
+    | 'SIN_COINCIDENCIA'
+    | 'SIN_TRANSACCION_PENDIENTE'
+    | 'ERROR_PARSING';
   message: string;
 }
 

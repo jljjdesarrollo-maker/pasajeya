@@ -312,7 +312,7 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight text-balance">
-            Venta Autónoma de Boletos en Línea
+            PasajeYa: Venta Autónoma de Boletos en Línea
           </h1>
           <p className="mt-2 text-sm text-slate-300 max-w-2xl text-balance">
             Elija su asiento en el <strong className="text-white">Bloque Web (Asientos 1 al 10)</strong> con reserva asegurada de 15 minutos. Pague por transferencia directa a Banco de Loja o Pichincha / Deuna y reciba su Pase Digital con código QR verificado al instante.

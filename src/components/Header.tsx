@@ -21,9 +21,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, tenant 
             <a 
               href="#comprar" 
               onClick={(e) => { e.preventDefault(); setActiveTab('comprar'); }}
-              className="text-base font-bold tracking-tight text-white hover:text-amber-400 transition-colors whitespace-nowrap"
+              className="flex items-baseline gap-2 text-base font-extrabold tracking-tight text-white hover:text-amber-400 transition-colors whitespace-nowrap"
             >
-              {tenant.nombreComercial}
+              <span>PasajeYa</span>
+              <span className="text-xs font-normal text-slate-400">· {tenant.nombreComercial}</span>
             </a>
           </div>
 

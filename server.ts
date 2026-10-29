@@ -1,6 +1,11 @@
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { checkNeonHealth, getNeonSql } from './src/services/neonDb.ts';
+import * as dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 const app = express();
 const PORT = 3000;
@@ -182,13 +187,47 @@ app.post('/api/v1/cron/backup', (_req: Request, res: Response) => {
   });
 });
 
-// 5. API v1: Health Check
-app.get('/api/v1/health', (_req: Request, res: Response) => {
+// 5. API v1: Neon PostgreSQL Database Routes
+app.get('/api/v1/neon/health', async (_req: Request, res: Response) => {
+  const start = performance.now();
+  const health = await checkNeonHealth();
+  const latencyMs = Math.round(performance.now() - start);
+  res.json({
+    ...health,
+    latencyMs,
+    driver: '@neondatabase/serverless'
+  });
+});
+
+app.get('/api/v1/neon/tenants', async (_req: Request, res: Response) => {
+  try {
+    const sql = getNeonSql();
+    const tenants = await sql`
+      SELECT t.*, 
+        (SELECT json_agg(u.*) FROM "UnidadBus" u WHERE u."tenantId" = t.id) as unidades,
+        (SELECT json_agg(r.*) FROM "Ruta" r WHERE r."tenantId" = t.id) as rutas
+      FROM "Tenant" t
+    `;
+    res.json({ success: true, count: tenants.length, tenants });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6. API v1: General Health Check
+app.get('/api/v1/health', async (_req: Request, res: Response) => {
+  const neonHealth = await checkNeonHealth();
   res.json({
     status: 'ok',
-    service: 'Vilcabambaturis Transit Engine v4.0',
+    service: 'PasajeYa Transit Engine v4.0',
     timestamp: new Date().toISOString(),
+    neon: {
+      connected: neonHealth.connected,
+      branch: process.env.NEON_BRANCH || 'production',
+      database: (neonHealth.data as any)?.database || 'neondb'
+    },
     capabilities: [
+      'Neon Serverless PostgreSQL 16/18',
       'Multi-Tenant SaaS',
       'Atomic Seat Locking (15 min)',
       'T-20 min Departure Freeze',

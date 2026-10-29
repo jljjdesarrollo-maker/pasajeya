@@ -156,8 +156,50 @@ Ubicado en `prisma/schema.prisma`:
 
 ---
 
-## 7. DIRECTIVA PARA NUEVAS SESIONES DE CHAT / IA
+## 7. ARQUITECTURA DE INTERFAZ: PWA RESPONSIVE UNIFICADA CON PORTAL SEGREGADO
 
-1. **NO usar repositorios locales de Git** ni solicitar comandos de terminal Git al usuario para evitar problemas de sincronización de versiones.
-2. Todo el desarrollo, refinamiento de código y pruebas se realiza **directamente en esta plataforma en la nube**.
-3. Al iniciar una nueva conversación o continuar el proyecto, leer este archivo `ARCHIVO_MAESTRO_PASAJE_YA.md` para mantener intactas todas las reglas de negocio, entidades de datos y módulos.
+* **Principio de Cero Fricción para el Pasajero:**
+  * **NO se crean aplicaciones nativas separadas de Play Store/App Store para los pasajeros.**
+  * Motivo: Más del 85% de los pasajeros interparroquiales rechazan descargar una app pesada para un trayecto de bus de $2.50. Requieren entrar directamente por navegador web o link de WhatsApp.
+  * **Experiencia del Pasajero:** Vista limpia, sin menús administrativos ni botones técnicos. Funciona al 100% en pantallas móviles (smartphones) y escritorios.
+* **Portal de Personal Cooperativa (Secretaría, Ayudante, Gerencia):**
+  * Acceso protegido mediante PIN/contraseña desde un enlace discreto ("Acceso Personal").
+  * El ayudante a bordo puede instalar la misma web como PWA (icono en pantalla de inicio) para escaneo offline con IndexedDB.
+
+---
+
+## 8. PLAN MAESTRO DE LEVANTAMIENTO POR FASES
+
+* **Fase 1: Infraestructura Base & Despliegue en la Nube (COMPLETADA)**
+  * Conexión de GitHub a Vercel con build exitoso (`pasajeya.vercel.app`).
+  * Integración de base de datos Neon Serverless PostgreSQL (`@neondatabase/serverless`).
+  * Respaldo nocturno automatizado (cron 23:50 PM).
+  * Criptografía HMAC-SHA256 para códigos QR.
+
+* **Fase 2: Segregación Estricta de Portales Pasajero vs Personal (COMPLETADA)**
+  * Experiencia de compra pública 100% limpia para pasajeros (móvil y PC).
+  * Modal seguro de autenticación por PIN para personal de taquilla, ayudante y gerencia.
+  * Selector de roles protegido para operadores autorizados.
+
+* **Fase 3: Motor de Conciliación Bancaria en Tiempo Real (EN CURSO)**
+  * Webhook para correos automáticos de transferencias (Banco de Loja / Banco Pichincha / Deuna).
+  * Validación de montos exactos y asignación automática del asiento en < 3 segundos.
+
+* **Fase 4: Consola de Taquilla para Secretaría y Cierre T-20**
+  * Copia rápida de datos fiscales para facturación electrónica del SRI.
+  * Congelamiento automático de venta web a T-20 min y liberación de asientos sobrantes a ventanilla física.
+  * Protocolo de reasignación de flota por avería mecánica con alerta WhatsApp a pasajeros.
+
+* **Fase 5: PWA Offline del Ayudante a Bordo & Liquidación SaaS B2B**
+  * Descarga previa del manifiesto de pasajeros en IndexedDB antes de iniciar la ruta Loja-Vilcabamba.
+  * Validación criptográfica fuera de línea de códigos QR sin cobertura celular.
+  * Reporte mensual de liquidación de fees SaaS ($0.25 por boleto vendido en línea).
+
+---
+
+## 9. DIRECTIVA PARA NUEVAS SESIONES DE CHAT / IA
+
+1. Al abrir el proyecto desde cualquier cuenta de Google AI Studio, **leer primero `ARCHIVO_MAESTRO_PASAJE_YA.md` y `PROJECT_CONTEXT.md`**.
+2. Todo el código debe mantenerse sincronizado con el repositorio GitHub oficial `jljjdesarrollo-maker/pasajeya`.
+3. El despliegue de producción se gestiona en la cuenta de Vercel de `jjayajaramillo@gmail.com` apuntando a Neon Serverless.
+

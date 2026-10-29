@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
-import { checkNeonHealth, getNeonSql } from './src/services/neonDb.ts';
+import { checkNeonHealth, getNeonSql, getNeonTurnos, getNeonBoletos, createNeonTransaction, initNeonSchema } from './src/services/neonDb.ts';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
@@ -209,6 +209,42 @@ app.get('/api/v1/neon/tenants', async (_req: Request, res: Response) => {
       FROM "Tenant" t
     `;
     res.json({ success: true, count: tenants.length, tenants });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/neon/turnos', async (_req: Request, res: Response) => {
+  try {
+    const turnos = await getNeonTurnos();
+    res.json({ success: true, count: turnos.length, turnos });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/neon/boletos', async (_req: Request, res: Response) => {
+  try {
+    const boletos = await getNeonBoletos();
+    res.json({ success: true, count: boletos.length, boletos });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/neon/seed', async (_req: Request, res: Response) => {
+  try {
+    const result = await initNeonSchema();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/neon/transactions', async (req: Request, res: Response) => {
+  try {
+    const result = await createNeonTransaction(req.body);
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -201,7 +201,32 @@ export async function initNeonSchema() {
     );
   `;
 
-  return { success: true, message: 'Esquema Neon PostgreSQL inicializado correctamente.' };
+  // 3. Sembrar Frecuencias si no existen
+  await sql`
+    INSERT INTO "Frecuencia" ("id", "tenantId", "rutaId", "horaSalidaProgramada", "esFrecuenciaRigida")
+    VALUES 
+      ('frec-0600', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '06:00', true),
+      ('frec-0830', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '08:30', true),
+      ('frec-1130', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '11:30', true),
+      ('frec-1430', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '14:30', true),
+      ('frec-1600', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '16:00', true),
+      ('frec-1730', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '17:30', true),
+      ('frec-1900', 'tenant-vilcabambaturis', 'ruta-loja-vilca', '19:00', true)
+    ON CONFLICT ("id") DO NOTHING;
+  `;
+
+  // 4. Sembrar ProgramacionTurno para hoy si no existen
+  await sql`
+    INSERT INTO "ProgramacionTurno" ("id", "tenantId", "frecuenciaId", "busDiscoTeoricoId", "fecha", "asientosVendidosWeb", "asientosBloqueadosTemp", "ventaWebCongelada")
+    VALUES
+      ('turno-1', 'tenant-vilcabambaturis', 'frec-1430', 'bus-04', CURRENT_DATE, '{1,2}', '{}'::jsonb, false),
+      ('turno-2', 'tenant-vilcabambaturis', 'frec-1600', 'bus-12', CURRENT_DATE, '{3}', '{}'::jsonb, false),
+      ('turno-3', 'tenant-vilcabambaturis', 'frec-1730', 'bus-18', CURRENT_DATE, '{}', '{}'::jsonb, false),
+      ('turno-4', 'tenant-vilcabambaturis', 'frec-1900', 'bus-25', CURRENT_DATE, '{5,6}', '{}'::jsonb, false)
+    ON CONFLICT ("id") DO NOTHING;
+  `;
+
+  return { success: true, message: 'Esquema y datos iniciales de Neon PostgreSQL inicializados correctamente.' };
 }
 
 /**
@@ -229,3 +254,72 @@ export async function checkNeonHealth() {
     };
   }
 }
+
+/**
+ * Consulta de turnos y asientos vendidos en Neon
+ */
+export async function getNeonTurnos() {
+  const sql = getNeonSql();
+  const rows = await sql`
+    SELECT 
+      pt.*,
+      f."horaSalidaProgramada" as "frecuenciaHora",
+      ub."numeroDisco" as "busDiscoTeorico",
+      ub_real."numeroDisco" as "busDiscoReal"
+    FROM "ProgramacionTurno" pt
+    LEFT JOIN "Frecuencia" f ON pt."frecuenciaId" = f.id
+    LEFT JOIN "UnidadBus" ub ON pt."busDiscoTeoricoId" = ub.id
+    LEFT JOIN "UnidadBus" ub_real ON pt."busDiscoRealId" = ub_real.id
+    ORDER BY f."horaSalidaProgramada" ASC
+  `;
+  return rows;
+}
+
+/**
+ * Registrar transacción en Neon
+ */
+export async function createNeonTransaction(tx: {
+  id: string;
+  tenantId: string;
+  turnoId: string;
+  banco: 'BANCO_DE_LOJA' | 'BANCO_PICHINCHA';
+  referenciaBanco: string;
+  montoEsperado: number;
+  montoRecibido?: number | null;
+  feeServicioCalculado: number;
+  estado?: string;
+  compradorCedula: string;
+  compradorNombre: string;
+  compradorCorreo: string;
+  compradorWhatsApp: string;
+}) {
+  const sql = getNeonSql();
+  await sql`
+    INSERT INTO "TransaccionPago" (
+      "id", "tenantId", "turnoId", "banco", "referenciaBanco",
+      "montoEsperado", "montoRecibido", "feeServicioCalculado",
+      "estado", "compradorCedula", "compradorNombre", "compradorCorreo", "compradorWhatsApp"
+    ) VALUES (
+      ${tx.id}, ${tx.tenantId}, ${tx.turnoId}, ${tx.banco}, ${tx.referenciaBanco},
+      ${tx.montoEsperado}, ${tx.montoRecibido || null}, ${tx.feeServicioCalculado},
+      ${(tx.estado || 'PENDIENTE') as any}, ${tx.compradorCedula}, ${tx.compradorNombre}, ${tx.compradorCorreo}, ${tx.compradorWhatsApp}
+    )
+    ON CONFLICT ("tenantId", "referenciaBanco") DO UPDATE
+    SET "estado" = EXCLUDED."estado", "montoRecibido" = EXCLUDED."montoRecibido";
+  `;
+  return { success: true, id: tx.id };
+}
+
+/**
+ * Consulta de boletos emitidos en Neon
+ */
+export async function getNeonBoletos() {
+  const sql = getNeonSql();
+  return await sql`
+    SELECT b.*, t."compradorNombre", t."compradorCedula"
+    FROM "Boleto" b
+    JOIN "TransaccionPago" t ON b."transaccionId" = t.id
+    ORDER BY b."numeroAsiento" ASC
+  `;
+}
+

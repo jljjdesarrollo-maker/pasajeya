@@ -197,9 +197,10 @@ Ubicado en `prisma/schema.prisma`:
 
 ---
 
-## 9. DIRECTIVA PARA NUEVAS SESIONES DE CHAT / IA
+## 9. DIRECTIVA PARA NUEVAS SESIONES DE CHAT / IA Y PROTOCOLO DE CERO PÉRDIDA
 
-1. Al abrir el proyecto desde cualquier cuenta de Google AI Studio, **leer primero `ARCHIVO_MAESTRO_PASAJE_YA.md` y `PROJECT_CONTEXT.md`**.
-2. Todo el código debe mantenerse sincronizado con el repositorio GitHub oficial `jljjdesarrollo-maker/pasajeya`.
-3. El despliegue de producción se gestiona en la cuenta de Vercel de `jjayajaramillo@gmail.com` apuntando a Neon Serverless.
+1. Al abrir el proyecto desde cualquier cuenta de Google AI Studio, **leer primero obligatoriamente `ARCHIVO_MAESTRO_PASAJE_YA.md` y `PROJECT_CONTEXT.md`**.
+2. **Auto-registro en cada turno:** Toda conversación, acuerdo o cambio técnico debe clasificarse y asentarse de inmediato en `/PROJECT_CONTEXT.md` para no perder el hilo histórico.
+3. **Auto-sincronización a GitHub por turno:** Antes de culminar cada intervención donde se toquen archivos o documentación, la IA DEBE ejecutar `git add . && git commit -m "..." && git push origin main`. Esto previene pérdida de progreso si la cuota de la cuenta expira de forma imprevista.
+4. El despliegue de producción se actualiza de manera continua e instantánea en Vercel (`https://pasajeya.vercel.app`) vinculado a la cuenta `jjayajaramillo@gmail.com` y Neon PostgreSQL.
 

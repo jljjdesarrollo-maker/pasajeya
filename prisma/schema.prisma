@@ -64,7 +64,7 @@ model TenantBankConfig {
   tipoCuenta            String
   titular               String
   ruc                   String
-  imagenQrUrl           String
+  imagenQrUrl           String?
   activo                Boolean       @default(true)
 
   tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)

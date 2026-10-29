@@ -35,12 +35,18 @@
 - Suite de pruebas automatizadas `scripts/test-phase2-reconciliation.ts` superada al 100% (5/5 pruebas, latencia E2E ~1.2s < 3.0s).
 - Endpoint `/api/v1/payments/webhook` en `server.ts` con soporte para push de Google Cloud Pub/Sub (decodificación base64) y HTTP directo.
 
-### ⏳ FASE 3: CHECKOUT DEL PASAJERO, MAPA DE ASIENTOS (1-10) Y REGLA T-20 MINUTOS (SIGUIENTE PASO)
-- Reserva exclusiva de asientos web (1 al 10) con bloqueo temporal atómico de 15 minutos.
-- Congelamiento automático de venta web a T-20 minutos de la hora de salida de cada turno.
-- Liberación a taquilla física de asientos web no vendidos tras T-20 min.
+### ✅ FASE 3: CHECKOUT DEL PASAJERO, MAPA DE ASIENTOS (1-10) Y REGLA T-20 MINUTOS (COMPLETADA)
+- Interfaz 100% Mobile-First y Responsive (`src/components/public/`):
+  - `RouteSelector.tsx`: Catálogo completo de paradas Loja ⇄ Vilcabamba, Malacatos, El Tambo, Yangana, Zahuayco, La Elvira, con bifurcación vial oficial (ADR-005) y selector de fecha.
+  - `SeatMap.tsx`: Representación táctil de la cabina y autobús de 45 pasajeros con habilitación estricta del **Bloque Web (Asientos 1 al 10)** y bloqueo de asientos 11 al 45 para taquilla física.
+  - Temporizador visual atómico de 15 minutos (`15:00` -> `00:00`) con persistencia de locks en `asientosBloqueadosTemp` y liberación automática si expira.
+  - `CheckoutForm.tsx`: Formulario de pasajero invitado con Cédula ecuatoriana, Nombre, WhatsApp, selección de punto de abordaje urbano en Loja, y desglose transparente de Tarifa oficial + Fee transaccional de $0.25 por boleto individual. Generación de QR de transferencia bancaria (Banco de Loja / Pichincha / Deuna) y copia de datos en 1 clic.
+  - `TicketConfirmation.tsx`: Pase digital de abordaje oficial con firma criptográfica **HMAC-SHA256**, código QR de validación rápida, botón directo para compartir en WhatsApp (`wa.me`) y modo de impresión / PDF.
+  - Regla T-20 min verificada: Congelamiento automático de venta en línea y liberación de asientos a taquilla física si faltan <= 20 minutos para la salida.
+- Segregación estricta de rutas en `App.tsx` (`/`, `/checkout`, `/admin`, `/personal` con PIN `1191`).
+- Suite de pruebas automatizadas `scripts/test-phase3-checkout.ts` superada al 100% (6/6 pruebas exitosas).
 
-### ⏳ FASE 4: PORTAL DE SECRETARÍA / TAQUILLA SRI & GESTIÓN DE FLOTA
+### ⏳ FASE 4: PORTAL DE SECRETARÍA / TAQUILLA SRI & GESTIÓN DE FLOTA (SIGUIENTE PASO)
 - Interfaz privada protegida con PIN `1191`.
 - Copiado de datos de pasajeros en 1 clic para facturación electrónica del SRI.
 - Reasignación de disco de autobús por contingencia mecánica con alerta inmediata.

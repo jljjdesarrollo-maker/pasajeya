@@ -131,12 +131,17 @@ Cualquier instancia de IA que opere este proyecto debe ejecutar rigurosamente es
   - Notificación automática por WhatsApp vía gateway VPS Baileys / Evolution API.
   - Suite de pruebas de regresión automatizada (`scripts/test-phase2-reconciliation.ts`) con 100% de éxito (5/5 pruebas pasadas).
 
-- [ ] **Fase 3: Checkout del Pasajero, Mapa de Asientos (1-10) y Bloqueo Atómico T-20 min (SIGUIENTE PASO)**
-  - Mapa de autobús interactivo para selección exclusiva de asientos 1 al 10.
-  - Bloqueo temporal atómico de 15 minutos por asiento.
-  - Congelamiento estricto a T-20 min de la salida del turno y liberación de asientos no vendidos a ventanilla física.
+- [x] **Fase 3: Checkout del Pasajero, Mapa de Asientos (1-10) y Bloqueo Atómico T-20 min (100% COMPLETADA)**
+  - Componentes modulares Mobile-First (`RouteSelector.tsx`, `SeatMap.tsx`, `CheckoutForm.tsx`, `TicketConfirmation.tsx`).
+  - Catálogo vial con bifurcación oficial Loja-Vilcabamba vs Loja-El Tambo (ADR-005) y selector de fecha.
+  - Mapa interactivo táctil con cabina y delimitación estricta del Bloque Web (1 al 10); asientos 11 al 45 exclusivos de taquilla física.
+  - Temporizador visual atómico de 15 minutos (`15:00` -> `00:00`) con limpieza automática si expira.
+  - Formulario de invitado con validación de cédula ecuatoriana, punto de abordaje y desglose inmutable: Tarifa + Fee de $0.25 por boleto individual.
+  - Pase digital de abordaje con código QR generado en vivo mediante firma criptográfica **HMAC-SHA256**, botón para compartir en WhatsApp (`wa.me`) e impresión/PDF.
+  - Congelamiento estricto a T-20 min antes de la hora de salida de cada turno.
+  - Suite de pruebas de regresión `scripts/test-phase3-checkout.ts` superada al 100% (6/6 pruebas exitosas).
 
-- [ ] **Fase 4: Flujo de Secretaría SRI y Contingencia de Flota**
+- [ ] **Fase 4: Flujo de Secretaría SRI y Contingencia de Flota (SIGUIENTE PASO)**
   - Copiado rápido 1-clic para el sistema de facturación electrónica de la cooperativa.
   - Reasignación de disco de bus por avería con notificación por WhatsApp.
 
@@ -160,3 +165,4 @@ Cualquier instancia de IA que opere este proyecto debe ejecutar rigurosamente es
 | **Sesión Rutas & Corredor** | Lógica de Negocio / Rutas | Reestructuración de la topología vial: Malacatos 100% de paso obligatorio (troncal común); Ramal El Tambo directo Loja-Malacatos-El Tambo (sin Vilcabamba); Troncal Vilcabamba y extensiones Sur (Yangana, Zahuayco, La Elvira). Diagrama interactivo y filtrado exacto de turnos y paradas. |
 | **Fase 1: Reformulación** | Gobernanza & Prisma ORM | Creación de `AGENTS.md` (guardarraíles inmutables) y `memory.md`. Conexión de Prisma ORM v5+ a Neon PostgreSQL, push del esquema `prisma/schema.prisma` y ejecución exitosa de `prisma/seed.ts` con el piloto Vilcabambaturis. |
 | **Fase 2: Conciliación Bancaria** | Backend & Idempotencia | Implementación de `bankParsers.ts`, `bankReconciliationEngine.ts` y `/api/v1/payments/webhook`. Validación estricta de idempotencia `[tenantId, referenciaBanco]`, atomicidad con Prisma `$transaction`, despacho automático WhatsApp y suite de tests 100% exitosa (5/5). |
+| **Fase 3: Interfaz Pública & Pase QR** | Frontend UX & Mobile-First | Implementación modular de `RouteSelector.tsx`, `SeatMap.tsx`, `CheckoutForm.tsx` y `TicketConfirmation.tsx`. Bloqueo atómico de 15 minutos en asientos 1-10, desglose exacto de fee $0.25, firma criptográfica HMAC-SHA256 para códigos QR, botón WhatsApp y suite de tests 100% exitosa (6/6). |

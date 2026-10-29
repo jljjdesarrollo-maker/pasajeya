@@ -17,6 +17,43 @@ export default function App() {
   const tenant = dbService.getTenant();
 
   useEffect(() => {
+    // Detección de ruta inicial por URL (Segregación de interfaces)
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') || params.get('view');
+
+      if (path.includes('/admin') || path.includes('/taquilla') || tabParam === 'taquilla') {
+        if (!isStaff) {
+          const pin = window.prompt('Portal de Administración y Taquilla SRI. Ingrese PIN de operador:');
+          if (pin === '1191' || pin === '2026') {
+            setIsStaff(true);
+            setActiveTab('taquilla');
+          } else {
+            setActiveTab('comprar');
+          }
+        } else {
+          setActiveTab('taquilla');
+        }
+      } else if (path.includes('/personal') || path.includes('/ayudante') || tabParam === 'ayudante') {
+        if (!isStaff) {
+          const pin = window.prompt('PWA Ayudante de Unidad. Ingrese PIN de personal (1191):');
+          if (pin === '1191' || pin === '2026') {
+            setIsStaff(true);
+            setActiveTab('ayudante');
+          } else {
+            setActiveTab('comprar');
+          }
+        } else {
+          setActiveTab('ayudante');
+        }
+      } else {
+        setActiveTab('comprar');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (isStaff) {
       localStorage.setItem('pasajeya_staff_auth', 'true');
     } else {

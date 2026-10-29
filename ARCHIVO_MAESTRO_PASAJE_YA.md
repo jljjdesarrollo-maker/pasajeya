@@ -44,20 +44,29 @@
 * **PWA Offline-First:** Service Worker (`public/sw.js`) + Web App Manifest (`public/manifest.json`) + Base de datos local IndexedDB para el ayudante a bordo sin señal celular.
 
 ### B. Módulos de Infraestructura Desplegados en el Código
-1. **Motor de Conciliación Bancaria:**
+1. **Base de Datos en la Nube (Neon Serverless PostgreSQL):**
+   * **Organización:** `jljjdesarrollo-maker` (`org-purple-pine-13748800`)
+   * **Proyecto:** `quiet-union-86818791` (Región: AWS US East 2 - Ohio)
+   * **Rama Activa:** `production` (`br-summer-night-b51dnmcw`)
+   * **Conexión Pooler:** `ep-proud-dew-b5stc73y-pooler.c-7.us-east-2.aws.neon.tech/neondb`
+   * **Driver:** `@neondatabase/serverless` (HTTP & WebSockets)
+   * **Endpoints Backend:** `GET /api/v1/neon/health`, `GET /api/v1/neon/tenants`, `GET /api/v1/neon/turnos`, `GET /api/v1/neon/boletos`, `POST /api/v1/neon/transactions`, `POST /api/v1/neon/seed`.
+   * **Tablas Sembradas:** `Tenant`, `TenantBankConfig`, `Ruta`, `TramoTarifa`, `UnidadBus`, `Frecuencia`, `ProgramacionTurno`, `TransaccionPago`, `Boleto`.
+
+2. **Motor de Conciliación Bancaria:**
    * Endpoint: `POST /api/v1/payments/webhook`
    * Soporta sobres base64 de **Google Cloud Pub/Sub Push** conectados a la **Gmail API**.
    * Adaptadores Regex de latencia < 20 ms para Banco de Loja y Banco Pichincha / Deuna.
    * Fallback NLP con **Gemini AI (`gemini-3.8-flash`)** para correos desestructurados.
    * Ventana de conciliación total: **< 3 segundos**.
-2. **Gateway de WhatsApp Propio ($5.00/mes):**
+3. **Gateway de WhatsApp Propio ($5.00/mes):**
    * Configurado para correr en un servidor VPS económico de $5.00/mes con **Baileys / Evolution API** (`docker-compose.yml`).
    * Envía pases QR y alertas de cambio de bus sin costo por mensaje.
    * Endpoints: `POST /api/v1/whatsapp/send`, `GET /api/v1/whatsapp/status`.
-3. **Respaldo Automático de Base de Datos (Cron a las 23:50 PM):**
+4. **Respaldo Automático de Base de Datos (Cron a las 23:50 PM):**
    * Configurado en `vercel.json` con `"schedule": "50 23 * * *"` apuntando a `POST /api/v1/cron/backup`.
    * Genera un dump SQL completo compatible con PostgreSQL (`psql` / `pg_restore`) y calcula el hash de integridad SHA-256.
-4. **Infraestructura VPS Dockerizada:**
+5. **Infraestructura VPS Dockerizada:**
    * Archivo `docker-compose.yml` que orquesta:
      * Contenedor PostgreSQL 16 Alpine con almacenamiento persistente.
      * Contenedor Evolution API Baileys para WhatsApp.

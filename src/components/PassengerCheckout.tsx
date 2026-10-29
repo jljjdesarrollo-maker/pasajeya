@@ -377,6 +377,90 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
                 <span className="text-xs text-slate-500 font-mono">Tarifa Interparroquial</span>
               </div>
 
+              {/* Diagrama Visual Interactivo de la Topología del Corredor Vial */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Topología Oficial del Corredor Vial y Bifurcación en Malacatos</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    Troncal 100% Malacatos
+                  </span>
+                </div>
+
+                {/* Mapa Esquemático de Bifurcación */}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    {/* Troncal Común */}
+                    <div className="flex items-center gap-2">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white font-mono font-bold text-[11px]">
+                        Loja (Terminal)
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTramoId('t-1')}
+                        className={`px-3 py-1.5 rounded-lg border text-left font-bold transition-all cursor-pointer ${
+                          selectedTramoId === 't-1'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-400'
+                            : 'bg-emerald-50/40 border-emerald-200 text-emerald-900 hover:bg-emerald-100/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>Malacatos (Hub Central)</span>
+                        </div>
+                        <span className="text-[10px] text-emerald-700 font-normal block">
+                          Pasan el 100% de los turnos
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Bifurcación */}
+                    <div className="flex flex-col gap-2 pl-4 md:pl-0 border-l-2 md:border-l-0 md:border-t-0 border-slate-200">
+                      {/* Ramal El Tambo */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-purple-700 font-mono font-semibold">Ramal:</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTramoId('t-3')}
+                          className={`px-3 py-1 rounded-lg border text-left font-bold transition-all cursor-pointer ${
+                            selectedTramoId === 't-3'
+                              ? 'bg-purple-100 border-purple-500 text-purple-950 ring-2 ring-purple-400'
+                              : 'bg-purple-50 border-purple-200 text-purple-900 hover:bg-purple-100'
+                          }`}
+                        >
+                          <span>El Tambo</span>
+                          <span className="text-[10px] text-purple-700 font-normal block">
+                            Directo Loja - Malacatos - Tambo (No Vilcabamba)
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Troncal Vilcabamba y Sur */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-amber-700 font-mono font-semibold">Sur:</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTramoId('t-2')}
+                          className={`px-3 py-1 rounded-lg border text-left font-bold transition-all cursor-pointer ${
+                            selectedTramoId === 't-2'
+                              ? 'bg-amber-100 border-amber-500 text-amber-950 ring-2 ring-amber-400'
+                              : 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100'
+                          }`}
+                        >
+                          <span>Vilcabamba</span>
+                          <span className="text-[10px] text-amber-700 font-normal block">
+                            Vía Malacatos ➔ Yangana ➔ Zahuayco ➔ La Elvira
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Punto de Destino (Tramo de Tarifa Oficial)
@@ -384,7 +468,27 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {activeRoute?.tramos.map(tramo => {
                     const isSelected = selectedTramoId === tramo.id;
-                    const isAll = tramo.puntoDestino.toLowerCase().includes('malacatos') || tramo.puntoDestino.toLowerCase().includes('vilcabamba');
+                    const isMalacatos = tramo.puntoDestino.toLowerCase().includes('malacatos');
+                    const isTambo = tramo.puntoDestino.toLowerCase().includes('tambo');
+                    const isVilcabamba = tramo.puntoDestino.toLowerCase().includes('vilcabamba');
+                    const isSurDeep = tramo.puntoDestino.toLowerCase().includes('yangana') || tramo.puntoDestino.toLowerCase().includes('zahuayco') || tramo.puntoDestino.toLowerCase().includes('elvira');
+
+                    let badgeText = 'Turnos específicos';
+                    let badgeColor = 'text-slate-500';
+                    if (isMalacatos) {
+                      badgeText = '100% de buses (Troncal)';
+                      badgeColor = 'text-emerald-700 font-bold';
+                    } else if (isTambo) {
+                      badgeText = 'Ramal El Tambo';
+                      badgeColor = 'text-purple-700 font-semibold';
+                    } else if (isVilcabamba) {
+                      badgeText = 'Troncal Vilcabamba';
+                      badgeColor = 'text-amber-700 font-semibold';
+                    } else if (isSurDeep) {
+                      badgeText = 'Extensión Sur Profundo';
+                      badgeColor = 'text-indigo-700 font-semibold';
+                    }
+
                     return (
                       <button
                         key={tramo.id}
@@ -401,8 +505,8 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
                           <span className="text-xs text-amber-700 font-bold font-mono">
                             ${tramo.tarifaNormal.toFixed(2)} USD
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">
-                            {isAll ? '100% de buses' : 'Turnos específicos'}
+                          <span className={`text-[10px] ${badgeColor}`}>
+                            {badgeText}
                           </span>
                         </div>
                       </button>
@@ -462,23 +566,23 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
                             </span>
                           </div>
 
-                          {/* Badge de alcance del bus */}
+                          {/* Badge de alcance del bus según la bifurcación */}
                           <div className="mt-1">
-                            {isElvira ? (
+                            {isTambo ? (
+                              <span className="inline-block text-[10px] font-semibold text-purple-800 bg-purple-100 px-1.5 py-0.5 rounded">
+                                Ramal El Tambo
+                              </span>
+                            ) : isElvira ? (
                               <span className="inline-block text-[10px] font-semibold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded">
-                                Extensión La Elvira
+                                Ext. La Elvira
                               </span>
                             ) : isYangana ? (
                               <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                Extensión Yangana
-                              </span>
-                            ) : isTambo ? (
-                              <span className="inline-block text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-                                Extensión El Tambo
+                                Ext. Yangana
                               </span>
                             ) : (
                               <span className="inline-block text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                                Termina Vilcabamba
+                                Vilcabamba
                               </span>
                             )}
                           </div>
@@ -742,9 +846,16 @@ export const PassengerCheckout: React.FC<PassengerCheckoutProps> = ({ tenant }) 
                   >
                     <option value="Terminal Terrestre Loja - Andén 12">Terminal Terrestre Loja - Andén 12</option>
                     <option value="Parada Landangui (Puente)">Parada Landangui (Puente)</option>
-                    <option value="Malacatos (Parque Central)">Malacatos (Parque Central)</option>
-                    <option value="Vilcabamba (Terminal Principal)">Vilcabamba (Terminal Principal)</option>
-                    <option value="El Tambo (Intersección)">El Tambo (Intersección)</option>
+                    <option value="Malacatos (Parque Central)">Malacatos (Parque Central - Hub)</option>
+                    {selectedTramo?.puntoDestino.toLowerCase().includes('tambo') ? (
+                      <option value="El Tambo (Intersección / Centro)">El Tambo (Intersección / Centro)</option>
+                    ) : (
+                      <>
+                        <option value="Vilcabamba (Terminal Principal)">Vilcabamba (Terminal Principal)</option>
+                        <option value="Yangana (Centro)">Yangana (Centro Parroquial)</option>
+                        <option value="La Elvira (Control)">La Elvira (Control Sur)</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>

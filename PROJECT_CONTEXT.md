@@ -71,6 +71,16 @@ REGLAS OBLIGATORIAS DE CONTINUIDAD (PROTOCOLOS DE CERO PÉRDIDA ANTE FIN DE CUOT
   1. Cada turno de conversación debe clasificar y asentar automáticamente cualquier nuevo acuerdo o requerimiento en `/PROJECT_CONTEXT.md`.
   2. Todo cambio de código o documentación debe empujarse inmediatamente a GitHub (`git push origin main`) en el mismo turno, garantizando persistencia absoluta.
 
+### ADR-005: Topología Oficial del Corredor Vial y Bifurcación en Malacatos
+* **Problema planteado:** La ruta anterior ubicaba erróneamente a "El Tambo" en la misma secuencia lineal entre Vilcabamba y Yangana. En la geografía y operación real de Loja:
+  1. **Troncal Principal:** Loja ⇄ Malacatos (Parque Central). Pasa el 100% de los turnos y frecuencias sin excepción.
+  2. **Ramal El Tambo:** Ruta directa Loja ⇄ Malacatos ⇄ El Tambo (NO pasa por Vilcabamba).
+  3. **Troncal Vilcabamba y Sur Profundo:** Loja ⇄ Malacatos ⇄ Vilcabamba ⇄ (Yangana ⇄ Zahuayco ⇄ La Elvira).
+* **Decisión técnica:**
+  1. Corregir `paradasAtendidas` en `database.ts` para que los turnos de El Tambo contengan exclusivamente `['Malacatos', 'El Tambo']` sin tocar Vilcabamba.
+  2. Excluir turnos de El Tambo de las consultas a Vilcabamba y viceversa en `getTurnosPorDestino`.
+  3. Integrar diagrama esquemático interactivo de bifurcación en `PassengerCheckout.tsx` y filtrado dinámico de puntos de abordaje.
+
 ---
 
 ## ⚡ 4. PROTOCOLO OBLIGATORIO DE AUTO-SINCRONIZACIÓN CONTINUA ANTE AGOTAMIENTO DE CUOTA
@@ -142,3 +152,4 @@ Cualquier instancia de IA que opere este proyecto debe ejecutar rigurosamente es
 | **Sesión Vercel** | DevOps & Infra | Separación de cuentas Vercel (`jjayajaramillo@gmail.com` para PasajeYa vs cuenta de Ruta GO). Despliegue exitoso en `pasajeya.vercel.app` con variable `DATABASE_URL`. |
 | **Sesión UX / PWA** | UX / Seguridad | Definición de PWA unificada responsiva. Segregación de portal público de pasajeros (sin menús técnicos) y acceso privado para personal protegido con PIN `1191`. |
 | **Sesión Continuidad** | DevOps / Resiliencia | Creación del protocolo de cero pérdida ante fin de cuota de Google AI Studio, prompt maestro de arranque frío con auto-registro y subida automática sistemática a GitHub (`main`). |
+| **Sesión Rutas & Corredor** | Lógica de Negocio / Rutas | Reestructuración de la topología vial: Malacatos 100% de paso obligatorio (troncal común); Ramal El Tambo directo Loja-Malacatos-El Tambo (sin Vilcabamba); Troncal Vilcabamba y extensiones Sur (Yangana, Zahuayco, La Elvira). Diagrama interactivo y filtrado exacto de turnos y paradas. |

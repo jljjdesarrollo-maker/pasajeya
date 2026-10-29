@@ -17,7 +17,10 @@
 * **Cliente Piloto Activo:** **Vilcabambaturis Cía. Ltda.**
   * **RUC:** 1191728394001
   * **Sede Principal:** Loja, Ecuador (Terminal Terrestre Reina del Cisne)
-  * **Rutas Piloto:** Loja ⇄ Vilcabamba, Malacatos, El Tambo, Yangana, Zahuayco, La Elvira.
+  * **Rutas Piloto & Topología del Corredor:**
+    * **Troncal Común (100% de buses):** Loja (Terminal Reina del Cisne) ⇄ Malacatos (Parque Central).
+    * **Ramal El Tambo:** Loja ⇄ Malacatos ⇄ El Tambo (NO pasa por Vilcabamba).
+    * **Troncal Vilcabamba y Sur Profundo:** Loja ⇄ Malacatos ⇄ Vilcabamba ⇄ (Yangana ⇄ Zahuayco ⇄ La Elvira).
   * **Flota Piloto:** Disco 04 (LBA-2564), Disco 12 (LBA-3190), Disco 18 (LBA-1845), Disco 25 (LBA-4012). Capacidad estándar: 45 asientos por unidad.
   * **Cuentas Bancarias Registradas:**
     * Banco de Loja: Cta. Corriente #2901234567 (Titular: Vilcabambaturis Cía. Ltda.)

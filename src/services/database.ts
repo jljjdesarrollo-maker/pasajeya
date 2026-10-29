@@ -62,12 +62,12 @@ const SEED_TENANT: Tenant = {
       id: 'ruta-loja-vilcabamba',
       tenantId: 'tenant-vilcabambaturis',
       origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-      destino: 'Vilcabamba (Valle de la Longevidad)',
+      destino: 'Vilcabamba / Corredor Sur y Ramales',
       activa: true,
       tramos: [
         { id: 't-1', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'Malacatos (Parque Central)', tarifaNormal: 1.50, tarifaMedia: 0.75, esParadaUrbanaLoja: false },
         { id: 't-2', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'Vilcabamba (Terminal / Parque)', tarifaNormal: 2.00, tarifaMedia: 1.00, esParadaUrbanaLoja: false },
-        { id: 't-3', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'El Tambo (Intersección)', tarifaNormal: 2.50, tarifaMedia: 1.25, esParadaUrbanaLoja: false },
+        { id: 't-3', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'El Tambo (Ramal Malacatos)', tarifaNormal: 2.50, tarifaMedia: 1.25, esParadaUrbanaLoja: false },
         { id: 't-4', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'Yangana (Centro)', tarifaNormal: 3.00, tarifaMedia: 1.50, esParadaUrbanaLoja: false },
         { id: 't-5', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'Zahuayco', tarifaNormal: 3.25, tarifaMedia: 1.60, esParadaUrbanaLoja: false },
         { id: 't-6', rutaId: 'ruta-loja-vilcabamba', puntoDestino: 'La Elvira', tarifaNormal: 3.50, tarifaMedia: 1.75, esParadaUrbanaLoja: false },
@@ -76,7 +76,7 @@ const SEED_TENANT: Tenant = {
     {
       id: 'ruta-vilcabamba-loja',
       tenantId: 'tenant-vilcabambaturis',
-      origen: 'Vilcabamba (Terminal)',
+      origen: 'Vilcabamba / El Tambo',
       destino: 'Loja (Terminal Reina del Cisne)',
       activa: true,
       tramos: [
@@ -109,6 +109,12 @@ const SEED_TENANT: Tenant = {
 // Turnos sembrados para hoy
 const TODAY_STR = new Date().toISOString().split('T')[0];
 
+/**
+ * Programación diaria de turnos según la topología vial:
+ * - Loja -> Malacatos: Troncal común (Pasa el 100% de unidades).
+ * - Ramal El Tambo: Loja -> Malacatos -> El Tambo (NO pasa por Vilcabamba).
+ * - Troncal Vilcabamba y Sur: Loja -> Malacatos -> Vilcabamba -> (Yangana -> Zahuayco -> La Elvira).
+ */
 const INITIAL_TURNOS: ProgramacionTurno[] = [
   {
     id: 'turno-1',
@@ -132,9 +138,9 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
     frecuenciaId: 'frec-0715',
     frecuenciaHora: '07:15',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Loja - Vilcabamba - La Elvira',
+    destino: 'Loja - Malacatos - Vilcabamba - La Elvira',
     destinoFinal: 'La Elvira',
-    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo', 'Yangana', 'Zahuayco', 'La Elvira'],
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'Yangana', 'Zahuayco', 'La Elvira'],
     busDiscoTeoricoId: 'bus-12',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -148,9 +154,9 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
     frecuenciaId: 'frec-0830',
     frecuenciaHora: '08:30',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Loja - Vilcabamba - El Tambo',
+    destino: 'Loja - Malacatos - El Tambo',
     destinoFinal: 'El Tambo',
-    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo'],
+    paradasAtendidas: ['Malacatos', 'El Tambo'], // NO pasa por Vilcabamba
     busDiscoTeoricoId: 'bus-18',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -180,9 +186,9 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
     frecuenciaId: 'frec-1130',
     frecuenciaHora: '11:30',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Loja - Vilcabamba - Yangana',
+    destino: 'Loja - Malacatos - Vilcabamba - Yangana',
     destinoFinal: 'Yangana',
-    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo', 'Yangana'],
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'Yangana'], // Continúa desde Vilcabamba hacia Yangana
     busDiscoTeoricoId: 'bus-04',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -212,9 +218,9 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
     frecuenciaId: 'frec-1430',
     frecuenciaHora: '14:30',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Loja - Vilcabamba - La Elvira',
+    destino: 'Loja - Malacatos - Vilcabamba - La Elvira',
     destinoFinal: 'La Elvira',
-    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo', 'Yangana', 'Zahuayco', 'La Elvira'],
+    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'Yangana', 'Zahuayco', 'La Elvira'],
     busDiscoTeoricoId: 'bus-18',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -244,9 +250,9 @@ const INITIAL_TURNOS: ProgramacionTurno[] = [
     frecuenciaId: 'frec-1730',
     frecuenciaHora: '17:30',
     origen: 'Loja (Terminal Terrestre Reina del Cisne)',
-    destino: 'Loja - Vilcabamba - El Tambo',
+    destino: 'Loja - Malacatos - El Tambo',
     destinoFinal: 'El Tambo',
-    paradasAtendidas: ['Malacatos', 'Vilcabamba', 'El Tambo'],
+    paradasAtendidas: ['Malacatos', 'El Tambo'], // Ramal directo Loja - Malacatos - El Tambo
     busDiscoTeoricoId: 'bus-04',
     busDiscoRealId: null,
     fecha: TODAY_STR,
@@ -427,6 +433,9 @@ class TransitDatabaseService {
   private loadFromStorage() {
     if (typeof window === 'undefined') return;
     try {
+      const DB_VERSION = 'v4.3-corredor-malacatos-branching';
+      const currentVersion = localStorage.getItem('vt_db_version');
+
       const savedTenant = localStorage.getItem('vt_tenant');
       const savedTurnos = localStorage.getItem('vt_turnos');
       const savedTx = localStorage.getItem('vt_tx');
@@ -434,17 +443,26 @@ class TransitDatabaseService {
       const savedBackups = localStorage.getItem('vt_backups');
       const savedWa = localStorage.getItem('vt_wa');
 
-      if (savedTenant) this.tenant = JSON.parse(savedTenant);
-      if (savedTurnos) {
-        const parsed = JSON.parse(savedTurnos);
-        // Migración automática: verificar que los turnos tengan destinoFinal y paradasAtendidas
-        if (Array.isArray(parsed) && parsed.length > 0 && (!parsed[0].destinoFinal || !parsed[0].paradasAtendidas)) {
-          this.turnos = INITIAL_TURNOS;
-          localStorage.setItem('vt_turnos', JSON.stringify(INITIAL_TURNOS));
-        } else {
-          this.turnos = parsed;
+      // Si la versión de la base de datos cambió, forzar actualización de rutas y turnos según la topología oficial
+      if (currentVersion !== DB_VERSION) {
+        this.tenant = SEED_TENANT;
+        this.turnos = INITIAL_TURNOS;
+        localStorage.setItem('vt_tenant', JSON.stringify(SEED_TENANT));
+        localStorage.setItem('vt_turnos', JSON.stringify(INITIAL_TURNOS));
+        localStorage.setItem('vt_db_version', DB_VERSION);
+      } else {
+        if (savedTenant) this.tenant = JSON.parse(savedTenant);
+        if (savedTurnos) {
+          const parsed = JSON.parse(savedTurnos);
+          if (Array.isArray(parsed) && parsed.length > 0 && (!parsed[0].destinoFinal || !parsed[0].paradasAtendidas)) {
+            this.turnos = INITIAL_TURNOS;
+            localStorage.setItem('vt_turnos', JSON.stringify(INITIAL_TURNOS));
+          } else {
+            this.turnos = parsed;
+          }
         }
       }
+
       if (savedTx) this.transacciones = JSON.parse(savedTx);
       if (savedBoletos) this.boletos = JSON.parse(savedBoletos);
       if (savedBackups) this.backups = JSON.parse(savedBackups);
@@ -482,40 +500,41 @@ class TransitDatabaseService {
   }
 
   /**
-   * Filtra turnos disponibles que efectivamente atienden el destino seleccionado.
-   * Reglas de la cooperativa de transporte Loja - Valle de Vilcabamba y Sur:
-   * 1. Malacatos: El 100% de los buses pasan obligatoriamente por Malacatos.
-   * 2. Vilcabamba: Todos los turnos terminados en Vilcabamba o con extensión sur (Tambo, Yangana, Elvira) pasan por Vilcabamba.
-   * 3. El Tambo: Solo turnos que continúan a El Tambo o más allá (Yangana / La Elvira).
-   * 4. Yangana: Solo turnos que continúan a Yangana o La Elvira.
-   * 5. La Elvira / Zahuayco: Exclusivamente turnos extendidos que llegan hasta La Elvira.
+   * Filtra turnos disponibles según la topología real del corredor vial:
+   * 1. Malacatos: 100% de los turnos pasan obligatoriamente por Malacatos (troncal común).
+   * 2. El Tambo: Ruta específica Loja - Malacatos - El Tambo (NO pasa por Vilcabamba).
+   * 3. Vilcabamba: Turnos que terminan en Vilcabamba o continúan al Sur. EXCLUYE turnos de El Tambo.
+   * 4. Yangana: Solo turnos extendidos que van vía Vilcabamba a Yangana o La Elvira.
+   * 5. Zahuayco: Solo turnos extendidos que van vía Vilcabamba a Zahuayco o La Elvira.
+   * 6. La Elvira: Solo turnos extendidos que llegan hasta La Elvira (destino final sur).
    */
   public getTurnosPorDestino(puntoDestinoNombreOId: string): ProgramacionTurno[] {
     const list = this.getTurnos();
     const dest = puntoDestinoNombreOId.toLowerCase();
 
     return list.filter(turno => {
-      // 1. Malacatos: Pasan todos los vehículos del corredor
+      // 1. Malacatos: Pasan todos los vehículos del corredor (100% de los turnos)
       if (dest.includes('malacatos') || dest === 't-1') {
         return true;
       }
 
-      // 2. Vilcabamba: Todos los turnos del corredor Loja-Sur pasan por Vilcabamba (tanto los que terminan allí como los de extensión)
-      if (dest.includes('vilcabamba') || dest === 't-2') {
-        return true;
-      }
-
-      // 3. El Tambo: Solo turnos cuyo recorrido incluye El Tambo (o continúan a Yangana / Elvira)
+      // 2. El Tambo: Exclusivo ramal Loja - Malacatos - El Tambo (NO pasa por Vilcabamba)
       if (dest.includes('tambo') || dest === 't-3') {
         return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('tambo')) || false;
       }
 
-      // 4. Yangana: Solo turnos que van a Yangana o La Elvira
-      if (dest.includes('yangana') || dest === 't-4') {
-        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('yangana')) || false;
+      // 3. Vilcabamba: Troncal sur (Vilcabamba, Yangana, Zahuayco, La Elvira).
+      // Se excluyen los turnos de El Tambo ya que bifurcan en Malacatos hacia el noroccidente sin ingresar a Vilcabamba.
+      if (dest.includes('vilcabamba') || dest === 't-2') {
+        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('vilcabamba')) || false;
       }
 
-      // 5. Zahuayco
+      // 4. Yangana: Solo turnos que van a Yangana o La Elvira
+      if (dest.includes('yangana') || dest === 't-4') {
+        return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('yangana') || p.toLowerCase().includes('elvira')) || false;
+      }
+
+      // 5. Zahuayco: Solo turnos que van a Zahuayco o La Elvira
       if (dest.includes('zahuayco') || dest === 't-5') {
         return turno.paradasAtendidas?.some(p => p.toLowerCase().includes('zahuayco') || p.toLowerCase().includes('elvira')) || false;
       }

@@ -1,29 +1,20 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/v1/cron/backup",
+      "path": "/api/v1/cron/backup-db",
       "schedule": "50 23 * * *"
+    },
+    {
+      "path": "/api/v1/cron/liquidacion-dia1",
+      "schedule": "5 0 1 * *"
     }
   ],
-  "headers": [
+  "rewrites": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
     }
   ]
 }
+

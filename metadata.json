@@ -1,6 +1,6 @@
 {
-  "name": "Vilcabambaturis - Sistema Autónomo de Boletos",
-  "description": "Plataforma SaaS Multi-Tenant de venta autónoma de boletos interparroquiales con auto-conciliación bancaria IA, bloqueo atómico de asientos, pase digital QR offline y gestión de taquilla.",
+  "name": "PasajeYa - Sistema Operativo y Venta de Boletos",
+  "description": "Plataforma SaaS multi-tenant de venta de boletos interprovinciales e intraprovinciales, conciliación bancaria automática, control de taquilla T-20 min, sincronización SRI y gestión de flota para Vilcabambaturis Cía. Ltda.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

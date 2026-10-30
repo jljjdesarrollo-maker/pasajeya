@@ -1,203 +1,280 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// Esquema Prisma ORM - PasajeYa Multi-Tenant SaaS (Fases 1 a 6 + Módulos 1 al 6 Definitivos - Producción)
+// Cliente Piloto: Vilcabambaturis Cía. Ltda. (Loja, Ecuador)
 
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 enum RolUsuario {
-  SUPERADMIN
-  GERENCIA
   SECRETARIA
-  PASAJERO_INVITADO
+  GERENCIA
+  CONDUCTOR
+  AYUDANTE
+  SUPERADMIN
 }
 
-enum EstadoPago {
-  PENDIENTE
-  CONFIRMADO
-  MONTO_INCOMPLETO
-  PAGO_EXTEMPORANEO
-  EXPIRADO
-  RECHAZADO
+enum EstadoAsiento {
+  DISPONIBLE_WEB
+  LOCKED_WEB
+  VENDIDO_WEB
+  DISPONIBLE_VENTANILLA
+  VENDIDO_TAQUILLA
 }
 
-enum EstadoBoleto {
-  RESERVADO
-  CONFIRMADO
-  ABORDADO
-  CANCELADO
-}
-
-enum BancoOperador {
+enum BancoConciliacion {
   BANCO_DE_LOJA
   BANCO_PICHINCHA
+  DEUNA_PICHINCHA
+  EFECTIVO_TAQUILLA
+  SALDO_A_FAVOR
+}
+
+enum EstadoNotaCredito {
+  ACTIVE
+  USED
+  EXPIRED
+}
+
+enum EstadoSaldoAFavor {
+  ACTIVO
+  CONSUMIDO_EN_TAQUILLA
+  EXPIRADO
 }
 
 model Tenant {
-  id                    String                   @id @default(uuid())
-  slug                  String                   @unique
-  nombreComercial       String
-  ruc                   String                   @unique
-  whatsappSoporte       String
-  activo                Boolean                  @default(true)
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-
-  configBancos          TenantBankConfig[]
-  rutas                 Ruta[]
-  unidades              UnidadBus[]
-  frecuencias           Frecuencia[]
-  turnos                ProgramacionTurno[]
-  transacciones         TransaccionPago[]
-  boletos               Boleto[]
-  facturacionesSaaS     FacturacionMensualTenant[]
-  logsRespaldos         LogRespaldoBD[]
+  id                  String                             @id @default(cuid())
+  nombre              String                             // Ej: "Vilcabambaturis Cía. Ltda."
+  ruc                 String                             @unique // Ej: "1191705482001"
+  pinAcceso           String                             @default("1191")
+  feePorBoletoUSD     Float                              @default(0.25)
+  frecuencias         Frecuencia[]
+  transaccionesBanco  TransaccionConciliacionBancaria[]
+  notasCreditoSaldo   NotaCreditoSaldo[]
+  saldosAFavor        SaldoAFavor[]
+  arqueosVentanilla   ArqueoVentanillaDiario[]
+  configuracionGlobal ConfiguracionGlobalTenant?
+  cuentasBancarias    CuentaBancariaCooperativa[]
+  facturacionMensual  FacturacionMensualTenant[]
+  respaldosBD         LogRespaldoBD[]
+  createdAt           DateTime                           @default(now())
 }
 
-model TenantBankConfig {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  banco                 BancoOperador
-  numeroCuenta          String
-  tipoCuenta            String
-  titular               String
-  ruc                   String
-  imagenQrUrl           String?
-  activo                Boolean       @default(true)
+model TransaccionConciliacionBancaria {
+  id                      String            @id @default(cuid())
+  tenantId                String
+  tenant                  Tenant            @relation(fields: [tenantId], references: [id])
+  banco                   BancoConciliacion
+  referenciaBanco         String
+  montoTransferidoUSD     Float
+  fechaHoraCorreo         DateTime
+  metodoExtraccion        String            // "REGEX_DETERMINISTA" | "GEMINI_NLP_FALLBACK"
+  latenciaConciliacionMs  Int               // < 1200ms SLA
+  aceptacionTerminos      Boolean           @default(true)
+  emitioBoleto            Boolean           @default(true)
+  feeTecnologicoCobrado   Float             @default(0.25) // $0.00 si no emitió boleto (ej. Saldo a Favor)
+  createdAt               DateTime          @default(now())
 
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, banco])
-}
-
-model Ruta {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  origen                String
-  destino               String
-  activa                Boolean       @default(true)
-
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tramos                TramoTarifa[]
-  frecuencias           Frecuencia[]
-}
-
-model TramoTarifa {
-  id                    String        @id @default(uuid())
-  rutaId                String
-  puntoDestino          String
-  tarifaNormal          Float
-  tarifaMedia           Float
-  esParadaUrbanaLoja    Boolean       @default(false)
-
-  ruta                  Ruta          @relation(fields: [rutaId], references: [id], onDelete: Cascade)
-}
-
-model UnidadBus {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  numeroDisco           String
-  placa                 String
-  capacidadTotal        Int           @default(45)
-
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  turnosTeoricos        ProgramacionTurno[] @relation("BusTeorico")
-  turnosReales          ProgramacionTurno[] @relation("BusReal")
-}
-
-model Frecuencia {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  rutaId                String
-  horaSalidaProgramada  String
-  esFrecuenciaRigida    Boolean       @default(true)
-
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ruta                  Ruta          @relation(fields: [rutaId], references: [id], onDelete: Cascade)
-  turnos                ProgramacionTurno[]
-}
-
-model ProgramacionTurno {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  frecuenciaId          String
-  busDiscoTeoricoId     String
-  busDiscoRealId        String?
-  fecha                 DateTime      @db.Date
-  asientosVendidosWeb   Int[]         @default([])
-  asientosBloqueadosTemp Json?        // Lock atómico de 15 min
-  ventaWebCongelada     Boolean       @default(false)
-
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  frecuencia            Frecuencia    @relation(fields: [frecuenciaId], references: [id], onDelete: Cascade)
-  busTeorico            UnidadBus     @relation("BusTeorico", fields: [busDiscoTeoricoId], references: [id])
-  busReal               UnidadBus?    @relation("BusReal", fields: [busDiscoRealId], references: [id])
-  transacciones         TransaccionPago[]
-  boletos               Boleto[]
-}
-
-model TransaccionPago {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  turnoId               String
-  banco                 BancoOperador
-  referenciaBanco       String
-  montoEsperado         Float
-  montoRecibido         Float?
-  feeServicioCalculado  Float         @default(0.25)
-  estado                EstadoPago    @default(PENDIENTE)
-  compradorCedula       String
-  compradorNombre       String
-  compradorCorreo       String
-  compradorWhatsApp     String
-  createdAt             DateTime      @default(now())
-
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  turno                 ProgramacionTurno @relation(fields: [turnoId], references: [id], onDelete: Cascade)
-  boletos               Boleto[]
-
+  // Control Antiduplicados estricto: Clave única compuesta [tenantId, referenciaBanco]
   @@unique([tenantId, referenciaBanco])
 }
 
-model Boleto {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  transaccionId         String
-  turnoId               String
-  numeroAsiento         Int
-  origen                String
-  destino               String
-  puntoAbordaje         String
-  codigoUnico           String        @unique
-  firmaDigitalHmac      String
-  estado                EstadoBoleto  @default(RESERVADO)
-  fechaAbordaje         DateTime?
-
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  transaccion           TransaccionPago @relation(fields: [transaccionId], references: [id], onDelete: Cascade)
-  turno                 ProgramacionTurno @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+model NotaCreditoSaldo {
+  id                      String            @id @default(cuid())
+  tenantId                String
+  tenant                  Tenant            @relation(fields: [tenantId], references: [id])
+  codigoNotaCredito       String            @unique // Ej: "NC-SALDO-BL994812"
+  cedulaRuc               String
+  pasajeroNombre          String
+  telefonoWhatsApp        String
+  bancoOrigen             BancoConciliacion
+  referenciaBancoOrigen   String
+  motivoOrigen            String            // "PAGO_POST_T20_MIN" | "PAGO_INCOMPLETO_NO_LIQUIDADO_T20"
+  montoOriginalUSD        Float
+  saldoDisponibleUSD      Float
+  feeTecnologicoCobrado   Float             @default(0.00) // Invariante: $0.25 NO se cobra si no emitió boleto
+  reembolsoEfectivo       Boolean           @default(false) // Invariante: 0 efectivo entregado en ventanilla
+  estado                  EstadoNotaCredito @default(ACTIVE) // ACTIVE | USED | EXPIRED (a los 30 días)
+  fechaEmision            DateTime          @default(now())
+  fechaExpiracion         DateTime          // Exactamente +30 días calendario (gastos administrativos si expira)
+  canjeadoEnBoletoId      String?
+  canjeadoAt              DateTime?
 }
 
-model FacturacionMensualTenant {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  mesAno                String
-  totalBoletosVendidos  Int
-  montoTotalFeeSaaS     Float
-  pagado                Boolean       @default(false)
+// Módulo 5B & 5D: Tabla SaldoAFavor con Quema Atómica en 1-Clic (SALDO-XXXXXX) y Ventana de Reversión de 3 Minutos
+model SaldoAFavor {
+  id                      String            @id @default(cuid())
+  tenantId                String
+  tenant                  Tenant            @relation(fields: [tenantId], references: [id])
+  cedulaRuc               String
+  depositanteNombre       String
+  telefonoWhatsApp        String
+  banco                   BancoConciliacion
+  referenciaBancaria      String            @unique
+  montoUSD                Float
+  estado                  EstadoSaldoAFavor @default(ACTIVO) // ACTIVO | CONSUMIDO_EN_TAQUILLA | EXPIRADO
+  codigoQuemaUnico        String?           @unique // Ej: "SALDO-849201"
+  pinSecretariaQuema      String?           // PIN de la secretaria que ejecutó el canje
+  consumidoAt             DateTime?
+  reversibleHasta         DateTime?         // +3 minutos desde consumidoAt para botón [Revertir Canje (3 min)]
+  efectivoEntregadoUSD    Float             @default(0.00) // Invariante: $0.00 entrega o salida de efectivo físico
+  feeTecnologicoUSD       Float             @default(0.00) // $0.00 sobre saldos que no emitieron boleto web
+  fechaDeposito           DateTime          @default(now())
+  fechaExpiracion         DateTime          // +30 días calendario
+}
 
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+// Módulo 5A: Arqueo Físico de Ventanilla (Efectivo Puro separado 100% de Ventas en Línea por Transferencia)
+model ArqueoVentanillaDiario {
+  id                               String   @id @default(cuid())
+  tenantId                         String
+  tenant                           Tenant   @relation(fields: [tenantId], references: [id])
+  fechaOperativa                   String   // YYYY-MM-DD
+  secretariaNombre                 String
+  ventaFisicaEfectivoUSD           Float    // $VentaFisicaEfectivo
+  encomiendasEfectivoUSD           Float    // $EncomiendasEfectivo
+  totalEfectivoCajonUSD            Float    // $VentaFisicaEfectivo + $EncomiendasEfectivo = $TotalEfectivoCajon
+  ventasWebTransferenciaInformativoUSD Float // Bloque separado (Auditoría Contable)
+  afectacionEfectivoPorWebUSD      Float    @default(0.00) // Invariante: $0.00 de afectación o descuadre
+  cerradoAt                        DateTime @default(now())
+}
+
+// Módulo 6: Consola de Configuración Global (/admin/configuracion)
+model ConfiguracionGlobalTenant {
+  id                        String   @id @default(cuid())
+  tenantId                  String   @unique
+  tenant                    Tenant   @relation(fields: [tenantId], references: [id])
+  bancoDeLojaHabilitado     Boolean  @default(true)  // Toggle [ON / OFF] en tiempo real
+  bancoPichinchaDeunaHabilitado Boolean @default(true) // Toggle [ON / OFF] en tiempo real
+  whatsappSoporteOficial    String   @default("+593 99 784 1191")
+  gatewayWhatsappUrl        String   @default("https://wa-vps.vilcabambaturis.ec/api/v2/instance")
+  gatewayWhatsappToken      String   @default("EVO-VPS-VILCA-994812001")
+  correoGerenciaSistemas    String   @default("gerencia@vilcabambaturis.ec")
+  cronBackupHora            String   @default("23:50") // 50 23 * * *
+  updatedAt                 DateTime @updatedAt
+}
+
+model CuentaBancariaCooperativa {
+  id                String            @id @default(cuid())
+  tenantId          String
+  tenant            Tenant            @relation(fields: [tenantId], references: [id])
+  banco             BancoConciliacion
+  nombreBanco       String
+  tipoCuenta        String            // "Cuenta Corriente" | "Cuenta de Ahorros"
+  numeroCuenta      String
+  rucTitular        String            // "1191705482001"
+  razonSocialTitular String           // "Cooperativa de Transporte Vilcabambaturis Cía. Ltda."
+  qrImagenDataUrl   String            // Imagen oficial QR (Deuna / Banco de Loja)
+  activa            Boolean           @default(true)
+  updatedAt         DateTime          @updatedAt
+}
+
+model Frecuencia {
+  id                 String              @id @default(cuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id])
+  origen             String              // Loja, Vilcabamba, Malacatos, El Tambo, Yangana, Zahuayco, La Elvira
+  destino            String
+  horaSalida         String              // Formato HH:mm
+  minutosParaSalida  Int                 // Control de regla T-20 min
+  tarifaUSD          Float
+  anden              String
+  busDiscoTeorico    String              // Ej: "Disco #08"
+  busDiscoReal       String              // Ej: "Disco #08" o reasignado "Disco #14"
+  placaBusReal       String
+  ventaWebCongelada  Boolean             @default(false)
+  congeladaAt        DateTime?
+  asientos           AsientoFrecuencia[]
+  boletos            Boleto[]
+  alertasWhatsApp    AlertaWhatsApp[]
+  updatedAt          DateTime            @updatedAt
+}
+
+model AsientoFrecuencia {
+  id            String        @id @default(cuid())
+  frecuenciaId  String
+  frecuencia    Frecuencia    @relation(fields: [frecuenciaId], references: [id])
+  numero        Int           // Bloque Web: 1 al 10
+  estado        EstadoAsiento @default(DISPONIBLE_WEB)
+  lockedUntil   DateTime?
+  boletoId      String?
+}
+
+model Boleto {
+  id                 String            @id @default(cuid())
+  transaccionId      String?           // Agrupa 1 Transacción Bancaria -> N Boletos QR independientes
+  frecuenciaId       String
+  frecuencia         Frecuencia        @relation(fields: [frecuenciaId], references: [id])
+  asientoNumero      Int               // Número de asiento individual (1 al 10 en web)
+  numeroAsiento      Int               @default(1) // Alias relacional 1-a-N por boleto
+  codigoUnico        String            @unique @default(cuid()) // Código QR único individual por boleto
+  cedulaRuc          String            // Validada con Algoritmo Módulo 10 en Medios Pasajes
+  pasajeroNombre     String
+  esMedioPasaje      Boolean           @default(false) // true = 50% Tarifa ANT (<18 o >=65 años)
+  edadPasajero       Int?              // Edad verificada para elegibilidad de Medio Pasaje
+  telefonoWhatsApp   String
+  origen             String
+  destino            String
+  montoUSD           Float             // Tarifa oficial ANT (100% o 50% en medio pasaje)
+  feeTecnologicoUSD  Float             @default(0.25) // Fee fijo $0.25 por cada boleto generado
+  canalVenta         String            // "WEB" | "TAQUILLA"
+  estadoBoleto       String            @default("CONFIRMADO") // Solo CONFIRMADO paga $0.25 en Liquidación Día 1
+  banco              BancoConciliacion
+  referenciaBancaria String            @unique // Idempotencia estricta Fase 2
+  firmaHmac          String            // Firma HMAC-SHA256 Fase 3
+  firmaDigitalHmac   String            @default("") // Firma criptográfica individual del QR
+  noCambiosNiDevoluciones Boolean      @default(true) // Política estricta: sin cambios ni devoluciones
+  sincronizadoSri    Boolean           @default(false)
+  manifiestoImpreso  Boolean           @default(false) // Entregado en papel al ayudante (sin dependencia de celular)
+  estadoAbordaje     String            @default("PENDIENTE") // "PENDIENTE" | "ABORDADO" (Escáner QR opcional)
+  abordadoAt         DateTime?
+  emitidoAt          DateTime          @default(now())
+}
+
+model AlertaWhatsApp {
+  id               String     @id @default(cuid())
+  frecuenciaId     String
+  frecuencia       Frecuencia @relation(fields: [frecuenciaId], references: [id])
+  telefono         String
+  pasajeroNombre   String
+  busDiscoAnterior String
+  busDiscoNuevo    String
+  mensaje          String
+  gatewayStatus    String     // "SENT_VPS_200"
+  enviadoAt        DateTime   @default(now())
 }
 
 model LogRespaldoBD {
-  id                    String        @id @default(uuid())
-  tenantId              String
-  fechaRespaldo         DateTime      @default(now())
-  tamanoBytes           Int
-  enviadoCorreo         String
-  exitoso               Boolean       @default(true)
+  id                 String   @id @default(cuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id])
+  archivoNombre      String   // Ej: "pasajeya_vilcabambaturis_2026-10-29_2350.sql.gz"
+  tamanoBytes        Int
+  tablasIncluidas    Int
+  registrosTotales   Int
+  correoDestinatario String   // Dinámico desde process.env.BACKUP_NOTIFICATION_EMAIL
+  checksumSha256     String
+  estado             String   // "EXITOSO" | "ERROR"
+  ejecutadoAt        DateTime @default(now())
+}
 
-  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model FacturacionMensualTenant {
+  id                     String    @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant    @relation(fields: [tenantId], references: [id])
+  periodoMes             String    // Ej: "2026-10"
+  fechaCierreDia1        String    @default("2026-11-01T00:05:00-05:00") // Día 1 del mes siguiente a las 00:05 AM
+  boletosEmitidosTotal   Int
+  recaudacionBrutaUSD    Float
+  feeUnitarioUSD         Float     @default(0.25)
+  feeTecnologicoTotalUSD Float     // boletosConfirmados * 0.25 (sin cobrar sobre saldos sin boleto)
+  netoCooperativaUSD     Float     // recaudacionBrutaUSD - feeTecnologicoTotalUSD
+  estadoLiquidacion      String    // "BORRADOR_PREFACTURA_DIA_1" | "APROBADA_POR_GERENCIA" | "CONCILIADO_PAGADO"
+  correoEnviadoGerencia  String?
+  aprobadoPorGerenciaAt  DateTime?
+  comprobanteLiquidacion String?
+  updatedAt              DateTime  @updatedAt
 }
